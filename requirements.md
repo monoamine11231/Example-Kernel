@@ -4,7 +4,7 @@
 pico 8 restrictions in syscalls
 
 # arch
-x86, arm or risc-v
+x86
 
 # features
 - Disk r/w
