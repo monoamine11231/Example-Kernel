@@ -20,3 +20,4 @@ x86, arm or risc-v
 - dima -- pokemon like game
 
 
+![widePeepoHappy](peepo-emotes/widePeepoHappy.png "test image")
