@@ -4,7 +4,7 @@
 pico 8 restrictions in syscalls
 
 # arch
-x86
+x86 (protected mode)
 
 # features
 - Disk r/w
@@ -14,6 +14,7 @@ x86
 - Unikernel, develop into monolithic kernel w/ scheduler
 - Posix subset
 - KAlloc
+- Page table
 
 # user land apps
 - peepoFighter
