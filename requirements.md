@@ -47,6 +47,6 @@ nice to have
 if we go mad
 - networking (might exist stealable drivers)
 - USB keyboard
-- 
+- PIE
 
 ![widePeepoHappy](peepo-emotes/widePeepoHappy.png "test image")
