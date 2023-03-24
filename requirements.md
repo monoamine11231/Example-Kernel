@@ -8,6 +8,9 @@ Meeting:
 Timeplan:
 - First two week: syscall contract and cargo setup
 - following weeks: best effort
+- May 19th MVP
+- May 26th, integration etc
+- -- polish
 
 
 Ioannis: FS
@@ -15,9 +18,9 @@ Dima: userspace
 Movitz: tasks/interupts/core
 Daniel: memory/core
 Anton: libPeepo / rust stdlib impl
-Castor: ??
-Adam: ??
-Seb: ??
+Castor: FS
+Adam: drivers
+Seb: rust stdlib
 
 Tasks to distribute: 
 - more core focus, userspace apps, own bootloader (if someone is interested)
@@ -46,3 +49,4 @@ if we go mad
 - USB keyboard
 - 
 
+![widePeepoHappy](peepo-emotes/widePeepoHappy.png "test image")
