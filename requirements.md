@@ -4,7 +4,7 @@ Meeting:
 - 
 
 Timeplan:
-- First week: syscall contract
+- First two week: syscall contract and cargo setup
 - following weeks: best effort
 
 
