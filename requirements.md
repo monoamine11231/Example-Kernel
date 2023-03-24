@@ -11,12 +11,12 @@ Timeplan:
 
 
 Ioannis: FS
-Dima: userspace / libPeepo / rust stdlib impl
+Dima: userspace
 Movitz: tasks/interupts/core
 Daniel: memory/core
+Anton: libPeepo / rust stdlib impl
 Castor: ??
 Adam: ??
-Anton: ??
 Seb: ??
 
 Tasks to distribute: 
