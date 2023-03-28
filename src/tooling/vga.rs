@@ -17,18 +17,27 @@ impl VGAWriter {
         }
     }
     pub fn get_line(&self) -> usize {
-        self.idx / 80
+        self.idx / 50
     }
     pub fn get_col(&self) -> usize {
-        self.idx % 25 
+        self.idx % 160
     }
     pub fn copy_to_vga(&self) {
         let vga_buffer = 0xb8000 as *mut u8;
-        //for i in 0..self.idx {
-        //    
-        //}
+        for i in 0..self.idx {
+            
+        }
     }
-    pub fn wstr_color(&mut self, s: &str, color : Option<u8>) -> core::fmt::Result {
+    pub fn newline(&mut self) {
+        self.idx = ((self.idx / 160)) * 160;
+        self.idx += 160;
+    }
+    pub fn writeln_color(&mut self, s : &str, color : Option<u8>) -> core::fmt::Result {
+        let res = self.write_color(s, color);
+        self.newline();
+        res
+    }
+    pub fn write_color(&mut self, s: &str, color : Option<u8>) -> core::fmt::Result {
         let color = match color {
             None => 0xf,
             Some(color) => color,
@@ -51,13 +60,13 @@ impl VGAWriter {
                 self.buffer[(start_pos + i * 2 + 1) as usize] = color;
             }
         }
-        self.idx = start_pos + s.len();
+        self.idx = start_pos + s.len() ;
     }
 }
 impl Write for VGAWriter {
     
     fn write_str(&mut self, s: &str) -> core::fmt::Result {
-        self.wstr_color(s, None)
+        self.write_color(s, None)
     }
 }
 pub fn write_str(s: &str, writer: Option<VGAWriter>, color : u8) -> VGAWriter {
