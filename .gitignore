@@ -1,2 +1,11 @@
 /target
+<<<<<<< HEAD
 .gdb_history
+=======
+kernel.bin
+mbr.bin
+vbr.bin
+test.bin
+test.img
+os.img
+>>>>>>> a782506 (Rust linker problem & Problem with PIE)
