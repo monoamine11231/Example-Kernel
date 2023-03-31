@@ -1,15 +1,15 @@
+use crate::tooling::vga;
+use crate::tooling::vga::VGAWriter;
+use core::arch::asm;
 use core::fmt::Write;
 use core::panic::PanicInfo;
-use crate::tooling::vga;
-use core::arch::asm;
-use crate::tooling::vga::VGAWriter;
 //use core::option;
 
 fn format_line_number(line: u32) -> &'static str {
-    // maximum number of digits possible to print. 
+    // maximum number of digits possible to print.
     // currently will not be able to print 5-digit line numbers
     // so make sure not to introduce any bugs on line 10000+ in any files guys...
-    const BUFFER_SIZE: usize = 4; 
+    const BUFFER_SIZE: usize = 4;
     static mut BUFFER: [u8; BUFFER_SIZE + 1] = [0; BUFFER_SIZE + 1];
 
     if line == 0 {
@@ -37,7 +37,7 @@ fn format_line_number(line: u32) -> &'static str {
 }
 
 /// Prints the file and line number where the panic occurred.
-fn print_location(writer : &mut VGAWriter, location: &core::panic::Location) {
+fn print_location(writer: &mut VGAWriter, location: &core::panic::Location) {
     let file = location.file();
     let line = location.line();
     writer.write_str_at(file, 3, 0, 0xc);
@@ -47,32 +47,28 @@ fn print_location(writer : &mut VGAWriter, location: &core::panic::Location) {
 }
 
 /// Prints the panic message.
-fn print_message(message: core::fmt::Arguments, writer : Option<VGAWriter>) -> VGAWriter {
-    let mut writer : VGAWriter = match writer {
-        None => {
-            VGAWriter::new()
-        }
-        Some(w) => {
-            w
-        }
+fn print_message(message: core::fmt::Arguments, writer: Option<VGAWriter>) -> VGAWriter {
+    let mut writer: VGAWriter = match writer {
+        None => VGAWriter::new(),
+        Some(w) => w,
     };
     let _ = write!(writer, "{}", message);
     //let message_str = core::str::from_utf8(&mut writer.buffer[..writer.idx]).unwrap_or("<invalid utf8>");
     //writer.write_str_at(message_str, 5, 0, 0xc);
-    return writer
+    return writer;
 }
 
-pub fn stack_trace(writer : &mut VGAWriter) {
-        let mut ebp : *mut u64;
-        let mut saved_ebp : *mut u64;
-        let mut saved_rip : u64;
-        let mut should_quit : u64;
-        //let mut writer : VGAWriter = VGAWriter::new();
-        unsafe {
-            loop {
-               // ; saved rbp is pointed to by rbp, which is stored in rbx
-               // ; rip is 8 bytes above saved rbp
-                asm!("
+pub fn stack_trace(writer: &mut VGAWriter) {
+    let mut ebp: *mut u64;
+    let mut saved_ebp: *mut u64;
+    let mut saved_rip: u64;
+    let mut should_quit: u64;
+    //let mut writer : VGAWriter = VGAWriter::new();
+    unsafe {
+        loop {
+            // ; saved rbp is pointed to by rbp, which is stored in rbx
+            // ; rip is 8 bytes above saved rbp
+            asm!("
                     mov rbx, rbp
                     mov {0}, rbp
                     cmp rbp, 0
@@ -87,31 +83,35 @@ pub fn stack_trace(writer : &mut VGAWriter) {
                         mov {2}, 1
                     2:
                  ", out(reg) ebp, out(reg) saved_ebp, out(reg) should_quit, out(reg) saved_rip);
-                //asm!("
-                //    mov {0}, rbp
-                //    mov rsp, rbp
-                //    
-                //    pop rbp
-                //    mov {1}, rbp
-                // ", out(reg) ebp, out(reg) saved_ebp);
-                write!(writer, "{}", format_args!("EBP = {:#x}, SAVED EBP = {:#x}, CALLER RIP = {:#x} TOP_FRAME = {}", ebp as u64, saved_ebp as u64, saved_rip, should_quit));// Some(print_message(format_args!("EBP = {:#x}, SAVED EBP = {:#x}, TOP_FRAME = {}\n", ebp as u64, saved_ebp as u64, should_quit), writer));
-                writer.newline();
-                if should_quit == 1 {
-                    break;
-                }
-                
+            //asm!("
+            //    mov {0}, rbp
+            //    mov rsp, rbp
+            //
+            //    pop rbp
+            //    mov {1}, rbp
+            // ", out(reg) ebp, out(reg) saved_ebp);
+            write!(
+                writer,
+                "{}",
+                format_args!(
+                    "EBP = {:#x}, SAVED EBP = {:#x}, CALLER RIP = {:#x} TOP_FRAME = {}",
+                    ebp as u64, saved_ebp as u64, saved_rip, should_quit
+                )
+            ); // Some(print_message(format_args!("EBP = {:#x}, SAVED EBP = {:#x}, TOP_FRAME = {}\n", ebp as u64, saved_ebp as u64, should_quit), writer));
+            writer.newline();
+            if should_quit == 1 {
+                break;
             }
         }
+    }
 }
 
-fn dump_current_frame () {
-        
-}
+fn dump_current_frame() {}
 
 /// This function is called on panic.
 #[panic_handler]
 pub fn panic(info: &PanicInfo) -> ! {
-    let mut vga : VGAWriter = VGAWriter::new();
+    let mut vga: VGAWriter = VGAWriter::new();
     vga.write_color("PANIC", Some(0xc)); // Print "PANIC" at row 2, column 0 with color 0xc (light red)
 
     if let Some(location) = info.location() {
@@ -123,8 +123,6 @@ pub fn panic(info: &PanicInfo) -> ! {
     }
     vga.newline();
     vga.newline();
-    stack_trace(&mut vga);    
-    loop {
-        
-    }
+    stack_trace(&mut vga);
+    loop {}
 }

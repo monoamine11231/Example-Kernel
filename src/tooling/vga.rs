@@ -11,8 +11,8 @@ impl VGAWriter {
             let vga_offset = 0xb8000 as *mut u8;
             let vga_buffer_slice = core::slice::from_raw_parts_mut(vga_offset, 4000); // (rows * cols) * (chars + color)
             VGAWriter {
-                    buffer : vga_buffer_slice,
-                    idx : 0,
+                buffer: vga_buffer_slice,
+                idx: 0,
             }
         }
     }
@@ -24,20 +24,18 @@ impl VGAWriter {
     }
     pub fn copy_to_vga(&self) {
         let vga_buffer = 0xb8000 as *mut u8;
-        for i in 0..self.idx {
-            
-        }
+        for i in 0..self.idx {}
     }
     pub fn newline(&mut self) {
-        self.idx = ((self.idx / 160)) * 160;
+        self.idx = (self.idx / 160) * 160;
         self.idx += 160;
     }
-    pub fn writeln_color(&mut self, s : &str, color : Option<u8>) -> core::fmt::Result {
+    pub fn writeln_color(&mut self, s: &str, color: Option<u8>) -> core::fmt::Result {
         let res = self.write_color(s, color);
         self.newline();
         res
     }
-    pub fn write_color(&mut self, s: &str, color : Option<u8>) -> core::fmt::Result {
+    pub fn write_color(&mut self, s: &str, color: Option<u8>) -> core::fmt::Result {
         let color = match color {
             None => 0xf,
             Some(color) => color,
@@ -60,27 +58,21 @@ impl VGAWriter {
                 self.buffer[(start_pos + i * 2 + 1) as usize] = color;
             }
         }
-        self.idx = start_pos + s.len() ;
+        self.idx = start_pos + s.len();
     }
 }
 impl Write for VGAWriter {
-    
     fn write_str(&mut self, s: &str) -> core::fmt::Result {
         self.write_color(s, None)
     }
 }
-pub fn write_str(s: &str, writer: Option<VGAWriter>, color : u8) -> VGAWriter {
+pub fn write_str(s: &str, writer: Option<VGAWriter>, color: u8) -> VGAWriter {
     let w = match writer {
-        None => {
-            VGAWriter::new()
-
-        }
-        Some(writer_arg) =>  {
-            writer_arg
-        }
+        None => VGAWriter::new(),
+        Some(writer_arg) => writer_arg,
     };
-    
-    return w
+
+    return w;
 }
 pub fn write_str_at(s: &str, row: usize, col: usize, color: u8) {
     let vga_buffer = 0xb8000 as *mut u8;
