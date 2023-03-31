@@ -1,14 +1,9 @@
+fn set_cr3() {}
 
-fn set_cr3() {
-    
-}
-
-pub struct TLB {
-
-}
+pub struct TLB {}
 
 pub struct PTEFlags {
-    flags : u64,
+    flags: u64,
 }
 
 impl PTEFlags {
@@ -41,21 +36,16 @@ impl PTEFlags {
     }
     // ... add the rest
 }
-// internal 
+// internal
 
-fn get_page(addr : u64) {
+fn get_page(addr: u64) {
     // verify sign extension
-    
+
     // traverse page table
 }
 
 // syscall alloc
-pub fn mmap() {
-    
-}
+pub fn mmap() {}
 
 // internal malloc for the kernel
-pub fn kalloc() {
-
-}
-
+pub fn kalloc() {}
