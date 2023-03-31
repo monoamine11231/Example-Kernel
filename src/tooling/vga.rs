@@ -53,7 +53,7 @@ impl VGAWriter {
     }
     pub fn write_str_at(&mut self, s: &str, row: usize, col: usize, color: u8) {
         let start_pos = (row * 80 + col) * 2;
-
+        
         for (i, byte) in s.bytes().enumerate() {
             unsafe {
                 self.buffer[(start_pos + i * 2) as usize] = byte;
@@ -67,29 +67,5 @@ impl Write for VGAWriter {
     
     fn write_str(&mut self, s: &str) -> core::fmt::Result {
         self.write_color(s, None)
-    }
-}
-pub fn write_str(s: &str, writer: Option<VGAWriter>, color : u8) -> VGAWriter {
-    let w = match writer {
-        None => {
-            VGAWriter::new()
-
-        }
-        Some(writer_arg) =>  {
-            writer_arg
-        }
-    };
-    
-    return w
-}
-pub fn write_str_at(s: &str, row: usize, col: usize, color: u8) {
-    let vga_buffer = 0xb8000 as *mut u8;
-    let start_pos = (row * 80 + col) * 2;
-
-    for (i, byte) in s.bytes().enumerate() {
-        unsafe {
-            *vga_buffer.offset((start_pos + i * 2) as isize) = byte;
-            *vga_buffer.offset((start_pos + i * 2 + 1) as isize) = color;
-        }
     }
 }

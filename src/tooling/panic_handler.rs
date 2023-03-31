@@ -5,7 +5,7 @@ use core::arch::asm;
 use crate::tooling::vga::VGAWriter;
 //use core::option;
 
-fn format_line_number(line: u32) -> &'static str {
+pub fn format_line_number(line: u32) -> &'static str {
     // maximum number of digits possible to print. 
     // currently will not be able to print 5-digit line numbers
     // so make sure not to introduce any bugs on line 10000+ in any files guys...
@@ -46,32 +46,44 @@ fn print_location(writer : &mut VGAWriter, location: &core::panic::Location) {
     writer.write_str_at(&line_str, 4, 6, 0xc);
 }
 
-/// Prints the panic message.
-fn print_message(message: core::fmt::Arguments, writer : Option<VGAWriter>) -> VGAWriter {
-    let mut writer : VGAWriter = match writer {
-        None => {
-            VGAWriter::new()
-        }
-        Some(w) => {
-            w
-        }
-    };
-    let _ = write!(writer, "{}", message);
-    //let message_str = core::str::from_utf8(&mut writer.buffer[..writer.idx]).unwrap_or("<invalid utf8>");
-    //writer.write_str_at(message_str, 5, 0, 0xc);
-    return writer
-}
-
 pub fn stack_trace(writer : &mut VGAWriter) {
         let mut ebp : *mut u64;
         let mut saved_ebp : *mut u64;
         let mut saved_rip : u64;
         let mut should_quit : u64;
         //let mut writer : VGAWriter = VGAWriter::new();
+
+        /*
+            rip: program counter
+            rsp: stack pointer
+            rbp: frame pointer, snapshot of rsp, constant
+
+         */
+
+
+        let mut rbx_cpy : u64;
+
         unsafe {
             loop {
                // ; saved rbp is pointed to by rbp, which is stored in rbx
                // ; rip is 8 bytes above saved rbp
+                /* 
+                asm!("
+                    mov {0}, [rbx]
+                    mov rbx, rbp
+                    cmp rbp, 0
+                    je 1f
+                    
+
+                    1:
+
+                    2:
+
+
+                
+                ", out(reg) rbx_cpy);
+                */
+                
                 asm!("
                     mov rbx, rbp
                     mov {0}, rbp
@@ -81,10 +93,10 @@ pub fn stack_trace(writer : &mut VGAWriter) {
                     mov rbp, [rbx]  
                     sub rbx, 8     
                     mov {3}, [rbx]
-                    mov {2}, 0
+                    mov {2}, 1
                     jmp 2f
                     1:
-                        mov {2}, 1
+                        mov {2}, 0
                     2:
                  ", out(reg) ebp, out(reg) saved_ebp, out(reg) should_quit, out(reg) saved_rip);
                 //asm!("
