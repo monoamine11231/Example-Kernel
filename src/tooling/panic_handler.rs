@@ -63,8 +63,8 @@ fn print_message(message: core::fmt::Arguments, writer : Option<VGAWriter>) -> V
 }
 
 pub fn stack_trace(writer : &mut VGAWriter) {
-        let mut ebp : *mut u64;
-        let mut saved_ebp : *mut u64;
+        let mut rbp : *mut u64;
+        let mut saved_rbp : *mut u64;
         let mut saved_rip : u64;
         let mut should_quit : u64;
         //let mut writer : VGAWriter = VGAWriter::new();
@@ -81,12 +81,12 @@ pub fn stack_trace(writer : &mut VGAWriter) {
                     mov rbp, [rbx]  
                     sub rbx, 8     
                     mov {3}, [rbx]
-                    mov {2}, 0
+                    mov {2}, 1
                     jmp 2f
                     1:
-                        mov {2}, 1
+                        mov {2}, 0
                     2:
-                 ", out(reg) ebp, out(reg) saved_ebp, out(reg) should_quit, out(reg) saved_rip);
+                ", out(reg) rbp, out(reg) saved_rbp, out(reg) should_quit, out(reg) saved_rip);
                 //asm!("
                 //    mov {0}, rbp
                 //    mov rsp, rbp
@@ -94,7 +94,7 @@ pub fn stack_trace(writer : &mut VGAWriter) {
                 //    pop rbp
                 //    mov {1}, rbp
                 // ", out(reg) ebp, out(reg) saved_ebp);
-                write!(writer, "{}", format_args!("EBP = {:#x}, SAVED EBP = {:#x}, CALLER RIP = {:#x} TOP_FRAME = {}", ebp as u64, saved_ebp as u64, saved_rip, should_quit));// Some(print_message(format_args!("EBP = {:#x}, SAVED EBP = {:#x}, TOP_FRAME = {}\n", ebp as u64, saved_ebp as u64, should_quit), writer));
+                write!(writer, "{}", format_args!("RBP = {:#x}, SAVED RBP = {:#x}, CALLER RIP = {:#x} TOP_FRAME = {}", rbp as u64, saved_rbp as u64, saved_rip, should_quit));// Some(print_message(format_args!("EBP = {:#x}, SAVED EBP = {:#x}, TOP_FRAME = {}\n", ebp as u64, saved_ebp as u64, should_quit), writer));
                 writer.newline();
                 if should_quit == 1 {
                     break;
