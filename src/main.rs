@@ -2,26 +2,24 @@
 #![no_main]
 #![feature(panic_info_message)]
 
+mod bord;
 mod tooling;
 use core::arch::asm;
 use core::fmt::Write;
 
-#[no_mangle] // don't mangle the name of this function
+use tooling::vga::write_str_at;
+
+#[no_mangle]
 pub extern "C" fn _start() -> ! {
-    let mut writer = tooling::vga::VGAWriter::new();
-    write!(writer, "Hello World!").unwrap();
-    writer.newline();
-    let mut arg : u64 = 5;
-    write_to_linear_buffer(&mut arg, &mut writer);
-    //inline_assmebly_test(&mut writer);
-    //panicking_function(&mut writer); 
+    write_str_at("Hello World!", 0, 0, 0xb);
+    panicking_function();
     loop {}
 }
 
 fn write_to_linear_buffer(test_arg : &mut u64, writer: &mut tooling::vga::VGAWriter){
     let mut t : u64;
     let mut q : u64;
-    
+
     t = 5;
     q = 6;
     let mut c = t+q;

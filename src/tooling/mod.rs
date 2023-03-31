@@ -1,2 +1,2 @@
-pub mod vga;
 pub mod panic_handler;
+pub mod vga;
