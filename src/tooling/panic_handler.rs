@@ -5,13 +5,8 @@ use core::fmt::Write;
 use core::panic::PanicInfo;
 //use core::option;
 
-<<<<<<< HEAD
-pub fn format_line_number(line: u32) -> &'static str {
-    // maximum number of digits possible to print. 
-=======
 fn format_line_number(line: u32) -> &'static str {
     // maximum number of digits possible to print.
->>>>>>> e7b0995c281acb988dcba91b6e914b48f37488b4
     // currently will not be able to print 5-digit line numbers
     // so make sure not to introduce any bugs on line 10000+ in any files guys...
     const BUFFER_SIZE: usize = 4;
@@ -64,8 +59,8 @@ fn print_message(message: core::fmt::Arguments, writer: Option<VGAWriter>) -> VG
 }
 
 pub fn stack_trace(writer: &mut VGAWriter) {
-    let mut ebp: *mut u64;
-    let mut saved_ebp: *mut u64;
+    let mut rbp: *mut u64;
+    let mut saved_rbp: *mut u64;
     let mut saved_rip: u64;
     let mut should_quit: u64;
     //let mut writer : VGAWriter = VGAWriter::new();
@@ -87,7 +82,7 @@ pub fn stack_trace(writer: &mut VGAWriter) {
                     1:
                         mov {2}, 0
                     2:
-                 ", out(reg) ebp, out(reg) saved_ebp, out(reg) should_quit, out(reg) saved_rip);
+                ", out(reg) rbp, out(reg) saved_rbp, out(reg) should_quit, out(reg) saved_rip);
             //asm!("
             //    mov {0}, rbp
             //    mov rsp, rbp
@@ -99,8 +94,8 @@ pub fn stack_trace(writer: &mut VGAWriter) {
                 writer,
                 "{}",
                 format_args!(
-                    "EBP = {:#x}, SAVED EBP = {:#x}, CALLER RIP = {:#x} TOP_FRAME = {}",
-                    ebp as u64, saved_ebp as u64, saved_rip, should_quit
+                    "RBP = {:#x}, SAVED RBP = {:#x}, CALLER RIP = {:#x} TOP_FRAME = {}",
+                    rbp as u64, saved_rbp as u64, saved_rip, should_quit
                 )
             ); // Some(print_message(format_args!("EBP = {:#x}, SAVED EBP = {:#x}, TOP_FRAME = {}\n", ebp as u64, saved_ebp as u64, should_quit), writer));
             writer.newline();
