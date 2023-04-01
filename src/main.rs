@@ -26,7 +26,8 @@ fn write_to_linear_buffer(test_arg: &mut u64, writer: &mut tooling::vga::VGAWrit
     q = 6;
     let mut c = t + q;
     (*test_arg) = c;
-    inline_assmebly_test(writer);
+    //inline_assmebly_test(writer);
+    tooling::panic_handler::stack_trace_changed(writer);
 }
 
 fn inline_assmebly_test(writer: &mut tooling::vga::VGAWriter) {
@@ -48,6 +49,16 @@ fn inline_assmebly_test(writer: &mut tooling::vga::VGAWriter) {
 
 fn panicking_function(writer: &mut tooling::vga::VGAWriter) {
     //write_str_at("Panicking function call", 0, 0, 0xb);
-    tooling::panic_handler::stack_trace(writer);
+    let mut a: u64 = 5;
+    tooling::panic_handler::stack_trace_changed(writer);
+    write!(
+        writer,
+        "{}",
+        format_args!("We should have pushed a value {:#x} to the stack", a)
+    )
+    .unwrap();
+
+    a += 1;
+
     //panic!("This is a test panic.");
 }
