@@ -117,11 +117,11 @@ main:
         
         pop cx
         mov ax, [SECTORS_TO_READ]
-        sub ax, 63                ; To prevent register overflow that will lead to more data being read
-        cmp cx, ax             
         add cx, 63                ; Register to cx register that we just read 63 sectors
+        cmp cx, ax             
 
         jl read_kernel            ; Read everything by chunks of 1 track = 63 sectors
+
 
     ; Set protected mode again
     cli

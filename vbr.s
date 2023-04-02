@@ -12,17 +12,7 @@ jmp KERNEL64_CODE_SEG:long_mode
 [bits 64]
 long_mode:
 ; Clear screen
-mov rcx, 0xb8000
-clear:
-    ; Black bg white space fill
-    mov al, ' '
-    mov ah, 0x00
-    mov [rcx], ax
-
-    inc rcx
-    inc rcx
-    cmp rcx, 0xb8000+80*25*2
-    jne clear 
+call clear_screen
 
 ; Stage 2 bootloader message on screen
 mov rax, 'S@T@A@G@'
@@ -37,10 +27,29 @@ mov [0xb800C], ax
 mov rsp, 0x9000  
 mov rbp, rsp
 
-mov rax, [0x100600]  
+call clear_screen
+
 ; Jump to kernel. Remember that we loaded the whole disk when loading the kernel, so we
 ; must jump to 4th sector where the kernel is located
 jmp 0x100600 
+
+clear_screen:
+    push rcx
+    mov rcx, 0xb8000
+
+    clear__:
+    ; Black bg white space fill
+    mov al, ' '
+    mov ah, 0x00
+    mov [rcx], ax
+
+    inc rcx
+    inc rcx
+    cmp rcx, 0xb8000+80*25*2
+    jne clear__
+    
+    pop rcx
+    ret
 
 %include "asm_include/gdt64.s"
 %include "asm_include/paging.s"

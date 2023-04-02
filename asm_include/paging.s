@@ -5,7 +5,7 @@ make_paging:
     or      eax, 1 << 5
     mov     cr4, eax   
 
-    ; Page Map Table (1) (Total 4MiB)
+    ; Page Map Table (1) (Total 6MiB)
     mov DWORD [0x70000], 0x71003   ; Set the address to the PDP table and set R/W+P flags, only the kernel can access it
     mov DWORD [0x70004], 0x0              ; Fill upper 32 bits with 0x0
 
@@ -15,13 +15,15 @@ make_paging:
     mov DWORD [0x71004], 0x0              ; Fill upper 32 bits with 0x0
 
 
-    ; Page Directory Table(s) (2) (2MiB each)
+    ; Page Directory Table(s) (3) (2MiB each)
     mov DWORD [0x72000], 0x73003   ; Set the address to the Page table and set R/W+P flags, only the kernel can access it
     mov DWORD [0x72004], 0x0              ; Fill upper 32 bits with 0x0
 
     mov DWORD [0x72008], 0x74003   ; Set the address to the Page table and set R/W+P flags, only the kernel can access it
     mov DWORD [0x7200C], 0x0              ; Fill upper 32 bits with 0x0
 
+    mov DWORD [0x72010], 0x75003
+    mov DWORD [0x72004], 0x0
 
     mov ecx, 0x0
     ; Perform identical mapping on the first 4MiB
@@ -41,7 +43,7 @@ make_paging:
         mov DWORD [0x73000+edx+4], 0x00
 
         inc ecx
-        cmp ecx, 0x0400
+        cmp ecx, 0x0600              ; Untill all 3 pages are filled
         jne fill_page_tables 
 
     mov     eax,0x70000

@@ -5,8 +5,10 @@ mbr.bin: mbr.s
 vbr.bin: vbr.s
 	nasm vbr.s -f bin -o vbr.bin
 
-os.img: mbr.bin vbr.bin
+cargo:
 	cargo build
+
+os.img: cargo mbr.bin vbr.bin
 	
 	sh makeimg.sh
 
@@ -14,4 +16,5 @@ run: os.img
 	qemu-system-x86_64 -drive format=raw,media=disk,file=os.img -monitor stdio -d cpu_reset -no-reboot
 
 clean:
-	rm os.img mbr.bin vbr.bin kernel.bin target/os/debug/kernel
+	rm os.img mbr.bin vbr.bin kernel.bin
+	cargo clean
