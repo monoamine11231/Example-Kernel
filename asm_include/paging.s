@@ -56,37 +56,4 @@ make_paging:
     or      eax,1 << 31
     mov     cr0,eax                 ; enable paging
 
-;     mov     edi, 10000h
-;     mov     ecx, 4096
-;     xor     eax, eax
-;     rep     stosd                   ; clear the page tables (set to 0x00)
-
-;     mov     dword [10000h],11000h + 111b ; first PDP table
-;     mov     dword [11000h],12000h + 111b ; first page directory
-;     mov     dword [12000h],13000h + 111b ; first page table
-
-;     mov     edi, 13000h              ; address of first page table
-;     mov     eax, 0
-;     mov     ecx, 256                 ; number of pages to map (1 MB)
-
-; ; Fallthrough
-; ; Build the Page Table.
-; make_page_entries:
-;     stosd
-;     add     edi,4
-;     add     eax,1000h
-;     loop    make_page_entries
-
-;     mov     eax,10000h
-;     mov     cr3,eax                 ; load page-map level-4 base
-
-;     mov     ecx,0C0000080h          ; EFER MSR
-;     rdmsr
-;     or      eax,1 << 8             ; enable long mode
-;     wrmsr
-
-;     mov     eax,cr0
-;     or      eax,1 << 31
-;     mov     cr0,eax                 ; enable paging
-
     ret

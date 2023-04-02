@@ -34,17 +34,16 @@ fn panic(_info: &PanicInfo) -> ! {
     loop {}    
 }
 
-
-static HELLO: &[u8] = b"Hello from kernel!";
-     
+        
 /* #[no_mangle] means: 
  * use the function or variable name (not its full path) as its symbol name.
- */
+ */  
 
-#[no_mangle]
-pub extern "C" fn _start() -> ! {
+static HELLO: &[u8] = b"Hello from kernel! <3 Unreal mode ";
+#[no_mangle]  
+#[link_section = ".start"] 
+pub extern "C" fn _start() -> ! {  
     let vga_buffer = 0xb8000 as *mut u8;
-
     for (i, &byte) in HELLO.iter().enumerate() {
         unsafe {
             *vga_buffer.offset(i as isize * 2) = byte;

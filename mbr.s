@@ -1,4 +1,5 @@
-; NASM SYNTAX
+; SYNTAX:   NASM
+; SIZE:     254 bytes (of 440) 
 
 
 ; Start off in 16-bit mode
@@ -11,12 +12,13 @@ SECOND_BOOTLOADER_LOCATION equ 0x500
 main:
     xor ax, ax
     mov ds, ax
+    mov ss, ax
 
     ; BIOS sets the boot drive number in dl register so save it for later
     mov [BOOT_DRIVE], dl
 
     ; Setup stack at nearly half of available RAM in real mode
-    mov bp, 0x4000  
+    mov bp, 0x9000  
     mov sp, bp
 
     ; Load the VBR sector (next 512 bytes that contains the second stage bootloader)
@@ -45,77 +47,110 @@ main:
     jne disk_error
 
     cli                        ; disable interrupts
+    
     lgdt [GDT32_Descriptor]    ; load GDT register with start address of Global Descriptor Table
+    
     mov eax, cr0 
     or al, 1                   ; set PE (Protection Enable) bit in CR0 (Control Register 0)
     mov cr0, eax
 
-    jmp KERNEL32_CODE_SEG:init_long_mode
+    mov bx, KERNEL32_DATA_SEG   ; 32 bit address space
+    mov ds, bx 
+    mov es, bx
+    mov fs, bx 
+    mov gs, bx
+    mov ss, bx
 
-    ; Freeze here if somehow returned
-    jmp $
+    and al, 0xFE        ; unreal mode (switching back to real mode)
+    mov cr0, eax
+    
+    xor ax, ax
+    mov ds, ax 
+    mov es, ax
+    mov fs, ax 
+    mov gs, ax
+    mov ss, ax
+
+    ; Get the number of reserved sectors (16 bit value)
+    mov bx, 0x50e
+    mov ax, WORD [bx] 
+
+    ; Add one sector (MBR) one since we are reading the whole disk to prevent working
+    ; working with offsets of sectors and heads
+    add ax, 1
+    mov [SECTORS_TO_READ], ax
+
+    mov cx, 0x0
+    sti             ; For BIOS interrupts
+
+    ; Read everything by chunks of 1 track = 63 sectors
+    read_kernel:
+        push cx
+
+        ; Destination where tmp read sectors are placed and then moved to higher address
+        ; 0x1000:0x00 = 0x10000
+        mov ax, WORD 0x1000
+        mov es, ax
+        mov bx, WORD 0x0000
+
+        mov ah, 02h
+        mov al, 63 ; Read 63 sectors at a time (1 head)
+        mov ch, 0          
+        mov cl, 0x1
+        mov dh, [HEAD]
+        mov dl, [BOOT_DRIVE]
+        int 13h
+
+
+        xor ax, ax
+        mov ds, ax
+        mov es, ax
+
+        mov esi, DWORD 0x10000    ; Source from where a track was loaded
+        mov edi, [DEST_PTR]       ; Destination at 1MiB
+        mov ecx, 16128            ; The number of ops to do, to copy fully to 1MiB area
+
+        a32 rep movsw             ; a32 to make it access the full edi and esi instead of di and si
+
+        inc BYTE [HEAD]
+        add DWORD [DEST_PTR], 32256
+        
+        pop cx
+        mov ax, [SECTORS_TO_READ]
+        sub ax, 63                ; To prevent register overflow that will lead to more data being read
+        cmp cx, ax             
+        add cx, 63                ; Register to cx register that we just read 63 sectors
+
+        jl read_kernel            ; Read everything by chunks of 1 track = 63 sectors
+
+    ; Set protected mode again
+    cli
+    lgdt [GDT32_Descriptor]
+
+    mov eax, cr0 
+    or al, 1                   ; set PE (Protection Enable) bit in CR0 (Control Register 0)
+    mov cr0, eax
+
+    ; Set back the right segment and zero the segment registers
+    mov eax, KERNEL32_DATA_SEG
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    mov ss, ax
+
+    ; Jump to second stage bootloader
+    jmp KERNEL32_CODE_SEG:SECOND_BOOTLOADER_LOCATION
 
 ; Freeze if an error occured
 disk_error:
-    ; Video Mode VGA
-    mov ah, 00h
-    mov al, 02h
-    int 0x10
-
-    ; Set active page
-    mov al, 05h
-    mov al, 00h
-    int 0x10
-
-    ; Print char
-    mov ah, 0eh
-    mov al, 92
-    mov bh, 00h
-    mov bl, 05h
-    int 0x10
-
     jmp $
 
-
-[bits 32]
-init_long_mode:
-    mov eax, KERNEL32_DATA_SEG    ; Set the A-register to the data descriptor.
-    mov ds, ax                    ; Set the data segment to the A-register.
-    mov es, ax                    ; Set the extra segment to the A-register.
-    mov fs, ax                    ; Set the F-segment to the A-register.
-    mov gs, ax                    ; Set the G-segment to the A-register.
-    mov ss, ax                    ; Set the stack segment to the A-register
-
-    call make_paging
-
-    lgdt [GDT64_Descriptor]
-
-    ; far jump to long mode
-    jmp KERNEL64_CODE_SEG:long_mode 
-         
-[bits 64]
-long_mode:
-    cli                           ; Clear the interrupt flag.
-    mov ax, KERNEL64_DATA_SEG     ; Set the A-register to the data descriptor.
-    mov ds, ax                    ; Set the data segment to the A-register.
-    mov es, ax                    ; Set the extra segment to the A-register.
-    mov fs, ax                    ; Set the F-segment to the A-register.
-    mov gs, ax                    ; Set the G-segment to the A-register.
-    mov ss, ax                    ; Set the stack segment to the A-register
-        
-    ; Time for second bo otloader loca tion
-    jmp SECOND_BOOTLOADER_LOCATION
-
 ; Include the description of gdt
-%include "asm_include/gdt.s"
-
-; Paging tables and methods
-%include "asm_include/paging.s"
+%include "asm_include/gdt32.s"
 
 ; The variable to store the boot drive number
-BOOT_DRIVE db 0
-
-; Null padding
-times 510 - ($-$$) db 0
-dw 0xaa55
-times 4196 db 0
+BOOT_DRIVE db 0x0
+SECTORS_TO_READ dw 0x0
+HEAD db 0x0
+DEST_PTR dd 0x100000

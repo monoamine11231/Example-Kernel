@@ -1,9 +1,6 @@
 [build]
 target = "os.json"
 
-[target.os]
-rustflags = ["-C", "relocation-model=pic"]
-
 [profile.dev.package."*"]
 debug = false
 strip = true
@@ -11,8 +8,8 @@ opt-level = 'z'
 codegen-units = 1
 
 [profile.debug]
-debug = false
-strip = true
+debug = true
+strip = false
 opt-level = 'z'
 codegen-units = 1
 lto = true

@@ -1,5 +1,16 @@
-[bits 64]
 [org 0x55a]
+
+[bits 32]
+call make_paging
+
+; Load the 64 bit GDT
+lgdt [GDT64_Descriptor]
+
+; Jump to long mode 
+jmp KERNEL64_CODE_SEG:long_mode
+
+[bits 64]
+long_mode:
 ; Clear screen
 mov rcx, 0xb8000
 clear:
@@ -22,29 +33,14 @@ mov ax, '2@'
 mov [0xb800C], ax 
 
 
-; Get the number of reserved sectors (16 bit value)
-mov rdx, 0x50e
-mov ax, WORD [rdx] 
+; Set nice stack
+mov rsp, 0x9000  
+mov rbp, rsp
 
-; Subtract 2 since FSInfo and BPB account for 2 sectors
-sub ax, 2
+mov rax, [0x100600]  
+; Jump to kernel. Remember that we loaded the whole disk when loading the kernel, so we
+; must jump to 4th sector where the kernel is located
+jmp 0x100600 
 
-; Read the kernel 
-mov ebx, 0x00000004     ; CHS value to read (from 4th sector where the kernel is stored)
-mov ch, al               ; The number of sectors to read
-mov rdi, 0x100000       ; Place kernel at 1MB (the kernel is linked to that position)
-call ata_chs_read   
-
-
-; Stage 3 bootloader message on screen
-mov rax, 'S@T@A@G@'
-mov [0xb8000], rax 
-mov eax, 'E@ @'
-mov [0xb8008], eax
-mov ax, '3@'
-mov [0xb800C], ax
-       
-mov rax, [0x100000]  
-jmp 0x100000   
-
-%include "asm_include/ata.s"
+%include "asm_include/gdt64.s"
+%include "asm_include/paging.s"
