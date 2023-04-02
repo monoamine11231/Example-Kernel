@@ -146,8 +146,8 @@ main:
 disk_error:
     jmp $
 
-; Include the description of gdt
-%include "asm_include/gdt32.s"
+; Include the description of gdt (relative to root path)
+%include "bootloader/asm_include/gdt32.s"
 
 ; The variable to store the boot drive number
 BOOT_DRIVE db 0x0

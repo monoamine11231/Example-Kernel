@@ -51,5 +51,5 @@ clear_screen:
     pop rcx
     ret
 
-%include "asm_include/gdt64.s"
-%include "asm_include/paging.s"
+%include "bootloader/asm_include/gdt64.s"
+%include "bootloader/asm_include/paging.s"
