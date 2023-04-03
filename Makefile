@@ -14,7 +14,10 @@ os.img: cargo mbr.bin vbr.bin
 	sh makeimg.sh
 
 run: os.img
-	qemu-system-x86_64 -drive format=raw,media=disk,file=build/os.img -monitor stdio -d cpu_reset -no-reboot
+	qemu-system-x86_64 -drive format=raw,media=disk,file=build/os.img -monitor stdio -d cpu_reset -no-reboot -no-shutdown
+
+debug: os.img
+	qemu-system-x86_64 -drive format=raw,media=disk,file=build/os.img -monitor stdio -d cpu_reset,guest_errors -no-reboot -S -gdb tcp::9000
 
 clean:
 	rm build/kernel.bin build/os.img build/bootloader/mbr.bin build/bootloader/vbr.bin
