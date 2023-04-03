@@ -1,0 +1,21 @@
+[build]
+target = "os.json"
+
+[profile.dev.package."*"]
+debug = false
+strip = true
+opt-level = 'z'
+codegen-units = 1
+
+[profile.debug]
+debug = true
+strip = false
+opt-level = 'z'
+codegen-units = 1
+lto = true
+panic = 'abort'
+
+
+[unstable]
+build-std-features = ["compiler-builtins-mem"]
+build-std = ["core", "compiler_builtins"]

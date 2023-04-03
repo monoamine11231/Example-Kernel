@@ -9,6 +9,7 @@ use core::fmt::Write;
 use tooling::vga::write_str_at;
 
 #[no_mangle]
+#[link_section = ".start"]
 pub extern "C" fn _start() -> ! {
     let mut console_writer = tooling::vga::VGAWriter::new();
     write!(console_writer, "Hello World!").unwrap();
