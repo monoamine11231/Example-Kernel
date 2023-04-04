@@ -39,7 +39,7 @@ pub fn load_idt(idt: &'static IDT) {
     unsafe {
         asm!(
             "lidt [{x}]",
-            "sti",
+            // "sti", // double fault when we enable interrupts, missing handlers, fix later
             x = in(reg) &x,
             options(nostack)
         );
@@ -92,8 +92,7 @@ pub struct IDTEntry {
 
 impl IDTEntry {
     pub fn new(f: HandlerFunc, dpl: Ring) -> Self {
-        let handler_addr = core::ptr::addr_of!(f) as u64;
-        // let handler_addr: u64 = unsafe { core::mem::transmute(f) };
+        let handler_addr: u64 = f as u64;
         let mut attribs = 1 << 7; // P flag
         attribs |= (dpl as u8) << 5;
         attribs |= 0b1110; // type = interrupt gate
@@ -122,10 +121,6 @@ impl Default for IDTEntry {
             offset3: 0,
         }
     }
-}
-
-struct GDT {
-    hehh: u64,
 }
 
 // https://wiki.osdev.org/Segment_Selector
