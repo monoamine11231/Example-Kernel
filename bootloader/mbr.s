@@ -154,3 +154,38 @@ BOOT_DRIVE db 0x0
 SECTORS_TO_READ dw 0x0
 HEAD db 0x0
 DEST_PTR dd 0x100000
+
+; Fill the rest of bootsector code with 0x00
+times 440 - ($-$$) db 0
+
+; Unique Disk ID
+dd 0x2c26cded
+; Reserved
+dw 0x0000
+
+; First (and only) partition 
+dd 0x00020000
+dd 0x0de0000c
+dd 0x00000001
+dd 0x0001869f
+
+; Second empty partition
+dd 0x00000000
+dd 0x00000000
+dd 0x00000000
+dd 0x00000000
+
+; Third empty partition
+dd 0x00000000
+dd 0x00000000
+dd 0x00000000
+dd 0x00000000
+
+; Forth empty partition
+dd 0x00000000
+dd 0x00000000
+dd 0x00000000
+dd 0x00000000
+
+; Boot signature
+dw 0xaa55
