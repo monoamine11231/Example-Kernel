@@ -55,7 +55,7 @@ struct IDTDescriptor<'a> {
 #[repr(C)]
 #[derive(Default)]
 pub struct IDT {
-    pub divide_by_zero: IDTEntry,
+    pub divide_error: IDTEntry,
     pub debug: IDTEntry,
     pub non_maskable_interrupt: IDTEntry,
     pub breakpoint: IDTEntry,
@@ -64,17 +64,20 @@ pub struct IDT {
     pub invalid_opcode: IDTEntry,
     pub device_not_available: IDTEntry,
     pub double_fault: IDTEntry,
+    pub reserved_9: IDTEntry,
     pub invalid_tss: IDTEntry,
     pub segment_not_present: IDTEntry,
     pub stack_segment_fault: IDTEntry,
     pub general_protection_fault: IDTEntry,
     pub page_fault: IDTEntry,
+    pub reserved_15: IDTEntry,
     pub x87_floating_point: IDTEntry,
     pub alignment_check: IDTEntry,
     pub machine_check: IDTEntry,
     pub simd_floating_point: IDTEntry,
     pub virtualization: IDTEntry,
     pub security_exception: IDTEntry,
+    pub more_reserved: [IDTEntry; 10],
 }
 
 type HandlerFunc = extern "x86-interrupt" fn();

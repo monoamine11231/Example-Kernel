@@ -23,12 +23,10 @@ pub extern "C" fn _start() -> ! {
     load_idt(&IDTX);
     write_str_at("Hello World!", 0, 0, 0xb);
 
-    let mut hej = 1;
     unsafe {
         asm!(
             "div {0:e}",
             in(reg) 0,
-            inout("eax") hej
         )
     }
 
@@ -38,7 +36,7 @@ pub extern "C" fn _start() -> ! {
 lazy_static! {
     static ref IDTX: IDT = IDT {
         page_fault: IDTEntry::new(handlers::page_fault, Ring::Zero),
-        divide_by_zero: IDTEntry::new(handlers::zero_div, Ring::Zero),
+        divide_error: IDTEntry::new(handlers::zero_div, Ring::Zero),
         debug: IDTEntry::new(handlers::debug, Ring::Zero),
         non_maskable_interrupt: IDTEntry::new(handlers::non_maskable_interrupt, Ring::Zero),
         breakpoint: IDTEntry::new(handlers::breakpoint, Ring::Zero),
@@ -57,6 +55,7 @@ lazy_static! {
         simd_floating_point: IDTEntry::new(handlers::simd_floating_point, Ring::Zero),
         virtualization: IDTEntry::new(handlers::virtualization, Ring::Zero),
         security_exception: IDTEntry::new(handlers::security_exception, Ring::Zero),
+        ..Default::default()
     };
 }
 
