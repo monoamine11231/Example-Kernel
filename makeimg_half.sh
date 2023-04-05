@@ -5,6 +5,21 @@ KERNEL_FILE_ELF=target/x86_64-peepo/debug/kernel
 KERNEL_FILE_BIN=build/kernel.bin
 OS=`uname -s`
 
+command_exists() {
+    command -v "$1" > /dev/null 2>&1
+}
+
+if ! command_exists objcopy; then
+    echo 'INSTALL OBJCOPY IN BINUTILS (MacOS)'
+    exit 1
+fi
+
+if ! command_exists mkfs.fat1; then
+    echo 'INSTALL MKFS.FAT IN DOSFS (MacOS)'
+    exit 1
+fi
+
+
 objcopy -I elf64-x86-64 -O binary --binary-architecture=i386:x86-64 $KERNEL_FILE_ELF $KERNEL_FILE_BIN
 
 if [ $OS = "Linux" ]
