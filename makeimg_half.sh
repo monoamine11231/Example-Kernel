@@ -14,7 +14,7 @@ if ! command_exists objcopy; then
     exit 1
 fi
 
-if ! command_exists mkfs.fat1; then
+if ! command_exists mkfs.fat; then
     echo 'INSTALL MKFS.FAT IN DOSFS (MacOS)'
     exit 1
 fi
