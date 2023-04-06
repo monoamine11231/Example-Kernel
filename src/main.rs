@@ -11,17 +11,23 @@ extern crate lazy_static;
 mod bord;
 mod handlers;
 mod tooling;
+mod drivers;
+mod utils;
 use core::arch::asm;
 use core::fmt::Write;
 
 use bord::*;
 use tooling::vga::write_str_at;
+use utils::qemu_io::qemu_println;
 
 #[no_mangle]
 #[link_section = ".start"]
 pub extern "C" fn _start() -> ! {
     load_idt(&IDTX);
     write_str_at("Hello World!", 0, 0, 0xb);
+
+    qemu_println("hello from serial terminal IO");
+
 
     unsafe {
         asm!(
