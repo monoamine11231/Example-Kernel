@@ -16,7 +16,8 @@ The map of lower memory (&lt;1MiB) should be complemented with [Memory Map (x86)
 | 0x500                | 0x200                       | VBR sector (Second bootloader)                          |
 | 0x7bff               | NaN                         | Stack top                                               |
 | 0x7c00               | 0x200                       | MBR sector (First bootloader)                           |
-| 0x7e00               | NaN                         | E820 memory map of upper memory (>= 1MiB)               |
+| 0x7e00               | 0x04                        | E820 memory map entries number                          |
+| 0x7e04               | NaN                         | E820 memory map of upper memory (>= 1MiB)               |
 |                      |                             |                                                         |
 | 0x70000              | 0x08 (1 entry) (4K align)   | PML4 (Temporary for switching into 64-bit mode)         |
 | 0x71000              | 0x08 (1 entry) (4K align)   | PDPT (Temporary for switching into 64-bit mode)         |
