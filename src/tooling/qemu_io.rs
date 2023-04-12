@@ -1,14 +1,8 @@
-use core::arch::asm;
+use super::serial::outb;
 
 pub fn qemu_print(string: &str) {
     for b in string.bytes() {
-        unsafe {
-            asm!("mov dx, {0:x}",
-                 "mov al, {1}",
-                 "out dx, al",
-                 in(reg) 0x3f8 as u16,
-                 in(reg_byte) b);
-        }
+        outb(0x3F8, b);
     }
 }
 
