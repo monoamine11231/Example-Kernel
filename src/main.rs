@@ -17,7 +17,8 @@ use core::fmt::Write;
 
 use bord::*;
 use tooling::vga::write_str_at;
-use tooling::qemu_io::qemu_println;
+use drivers::pci::{PCIDeviceCommonHeader, pci_get_header_0x00, pci_get_common_header, pci_get_u32};
+use tooling::qemu_io::qemu_print_hex;
 
 #[no_mangle]
 #[link_section = ".start"]
@@ -25,8 +26,9 @@ pub extern "C" fn _start() -> ! {
     load_idt(&IDTX);
     write_str_at("Hello World!", 0, 0, 0xb);
 
-    qemu_println("hello from serial terminal IO");
+    pci_get_header_0x00(0, 0, 0);
 
+    //qemu_println("hello from serial terminal IO");
 
     unsafe {
         asm!(

@@ -70,7 +70,7 @@ load_second_bootloader:
 [bits 16]
 get_e820_memory_map:
     ; ===================================================================================
-    ; Loads a memory map in e820 descriptors at base address of 0x700
+    ; Loads a memory map in e820 descriptors at base address of 0x7e00
     ; ===================================================================================
 
     mov eax, 0xe820                 ; Interrupt code for BIOS

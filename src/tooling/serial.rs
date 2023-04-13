@@ -1,6 +1,6 @@
 use core::arch::asm;
 
-/* Output byte to 16 bit port */
+/// Output a BYTE to a 16-bit serial port address
 pub fn outb(port: u16, value: u8) {
     unsafe {
         asm!("mov dx, {0:x}",
@@ -12,7 +12,7 @@ pub fn outb(port: u16, value: u8) {
     }
 }
 
-/* Output word to 16 bit port */
+/// Output a WORD to a 16-bit serial port address
 pub fn outw(port: u16, value: u16) {
     unsafe {
         asm!("mov dx, {0:x}",
@@ -24,7 +24,7 @@ pub fn outw(port: u16, value: u16) {
     }
 }
 
-/* Output dword to 16 bit port */
+/// Output a DWORD to a 16-bit serial port address
 pub fn outd(port: u16, value: u32) {
     unsafe {
         asm!("mov dx, {0:x}",
@@ -36,7 +36,7 @@ pub fn outd(port: u16, value: u32) {
     }
 }
 
-/* Input byte from 16 bit port */
+/// Returns a BYTE from a 16-bit serial port address
 pub fn inb(port: u16) -> u8 {
     let mut value: u8;
     unsafe {
@@ -51,7 +51,7 @@ pub fn inb(port: u16) -> u8 {
     return value;
 }
 
-/* Input word from 16 bit port */
+/// Returns a WORD from a 16-bit serial port address
 pub fn inw(port: u16) -> u16 {
     let mut value: u16;
     unsafe {
@@ -66,7 +66,7 @@ pub fn inw(port: u16) -> u16 {
     return value;
 }
 
-/* Input dword from 16 bit port */
+/// Returns a DWORD from a 16-bit serial port address
 pub fn ind(port: u16) -> u32 {
     let mut value: u32;
     unsafe {
