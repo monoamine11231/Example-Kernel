@@ -27,25 +27,15 @@ use heapless::String;
 use tooling::qemu_io::qemu_print_hex;
 use tooling::vga::write_str_at;
 
-use crate::apic::MADTX;
-
 #[no_mangle]
 #[link_section = ".start"]
 pub extern "C" fn _start() -> ! {
     load_idt(&IDTX);
     apic::init();
 
-    panic!("?? {:x}", RSDPX.rsdt_address + 0);
-    // panic!("a: {:x}", RSDPX.rsdt_address + 0);
-
-    // 7fe1ac6
-    //    let x = RSDTHeader::from_rsdp(rsdp).unwrap();
-
     write_str_at("Hello World!", 0, 0, 0xb);
 
     pci_get_header_0x00(0, 0, 0);
-
-    //qemu_println("hello from serial terminal IO");
 
     unsafe {
         asm!(
