@@ -8,22 +8,41 @@
 #[macro_use]
 extern crate lazy_static;
 
+mod acpi;
+mod apic;
 mod bord;
+mod drivers;
+mod drivers;
 mod handlers;
 mod tooling;
-mod drivers;
+mod utils;
 use core::arch::asm;
 use core::fmt::Write;
+use core::str::Bytes;
 
+use acpi::*;
 use bord::*;
-use tooling::vga::write_str_at;
-use drivers::pci::{PCIDeviceCommonHeader, pci_get_header_0x00, pci_get_common_header, pci_get_u32};
+use drivers::pci::{
+    pci_get_common_header, pci_get_header_0x00, pci_get_u32, PCIDeviceCommonHeader,
+};
+use heapless::String;
 use tooling::qemu_io::qemu_print_hex;
+use tooling::vga::write_str_at;
+
+use crate::apic::MADTX;
 
 #[no_mangle]
 #[link_section = ".start"]
 pub extern "C" fn _start() -> ! {
     load_idt(&IDTX);
+    apic::init();
+
+    panic!("?? {:x}", RSDPX.rsdt_address + 0);
+    // panic!("a: {:x}", RSDPX.rsdt_address + 0);
+
+    // 7fe1ac6
+    //    let x = RSDTHeader::from_rsdp(rsdp).unwrap();
+
     write_str_at("Hello World!", 0, 0, 0xb);
 
     pci_get_header_0x00(0, 0, 0);
