@@ -12,10 +12,8 @@ mod acpi;
 mod apic;
 mod bord;
 mod drivers;
-mod drivers;
 mod handlers;
 mod tooling;
-mod utils;
 use core::arch::asm;
 use core::fmt::Write;
 use core::str::Bytes;
@@ -23,7 +21,7 @@ use core::str::Bytes;
 use acpi::*;
 use bord::*;
 use drivers::pci::{
-    pci_get_common_header, pci_get_header_0x00, pci_get_u32, PCIDeviceCommonHeader,
+    pci_get_common_header, pci_get_header_0x00, pci_read_u32, PCIDeviceCommonHeader,
 };
 use heapless::String;
 use tooling::qemu_io::qemu_print_hex;

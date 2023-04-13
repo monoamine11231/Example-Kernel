@@ -1,6 +1,6 @@
 use core::mem::size_of;
 
-use crate::utils::qemu_io::qemu_println;
+use crate::tooling::qemu_io::qemu_println;
 
 lazy_static! {
     pub static ref RSDPX: &'static RSDP = find_rsdp().unwrap();
