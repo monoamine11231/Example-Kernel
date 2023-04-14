@@ -119,7 +119,7 @@ pub fn panic(info: &PanicInfo) -> ! {
     }
 
     if let Some(message) = info.message() {
-        print_message(*message, None);
+        //print_message(*message, None);
     }
     vga.newline();
     vga.newline();

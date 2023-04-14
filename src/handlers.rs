@@ -1,12 +1,14 @@
+use crate::tooling::{self, vga::write_str_at};
+use crate::utils::qemu_io::*;
 use core::panic::PanicInfo;
 
-use crate::tooling::{self, vga::write_str_at};
-
 pub extern "x86-interrupt" fn page_fault() {
+    qemu_print_str("err: page fault");
     write_str_at("err: page fault", 4, 0, 0xde)
 }
 
 pub extern "x86-interrupt" fn zero_div() {
+    qemu_print_str("err: div zero");
     write_str_at("err: div zero", 5, 0, 0xde)
 }
 
@@ -14,6 +16,7 @@ pub extern "x86-interrupt" fn zero_div() {
 macro_rules! interrupt_asd {
     ($x:tt,$a:tt) => {
         pub extern "x86-interrupt" fn $x() {
+            qemu_print_str(concat!("err: ", stringify!($x)));
             write_str_at(concat!("err: ", stringify!($x)), $a, 0, 0xde)
         }
     };
