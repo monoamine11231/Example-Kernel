@@ -1,4 +1,4 @@
-use crate::tooling::serial::{ind, outd};
+use crate::tooling::{serial::{ind, outd}, qemu_io::qemu_print_hex};
 
 /* Header structs for PCI devices */
 
@@ -179,6 +179,10 @@ pub fn pci_get_class(bus: u8, slot: u8, function: u8) -> u8 {
     return pci_read_u8(bus, slot, function, 0xB);
 }
 
+pub fn pci_get_subclass(bus: u8, slot: u8, function: u8) -> u8 {
+    return pci_read_u8(bus, slot, function, 0xA);
+}
+
 /// Extracts and returns the header type at given bus #, slot #, function #
 pub fn pci_get_header_type(bus: u8, slot: u8, function: u8) -> u8 {
     return pci_read_u8(bus, slot, function, 0xE);
@@ -291,4 +295,48 @@ pub fn pci_get_bar_address(bar: u32) -> u32 {
 
     /* Ignore the last 4 bits if mem BAR */
     return bar & 0xFFFFFFF0;
+}
+
+/// Returns the bus #, slot # and function # in a triple when found a device with the
+/// given class code. If such device was not found, returns (0xFF, 0xFF, 0xFF) as a
+/// signifier. This function brute forces through all bus lanes and slots.
+pub fn pci_device_search_by_class_subclass(class: u8, subclass: u8) -> (u8, u8, u8) {
+
+    /* Iteration not working :/ */
+    for bus in 0u8..=255u8 {
+        for slot in 0u8..32u8 {
+            /* If the device at the given bus and slot # is unvalid, just continue */
+            if pci_get_vendor_id(bus, slot, 0x00) == 0xFFFF {
+                continue;
+            }
+
+            /* Return + Exit if the device at the first function matches the class
+               and subclass */
+            let target_class: u8 = pci_get_class(bus, slot, 0x00);
+            let target_subclass: u8 = pci_get_subclass(bus, slot, 0x00);
+            if target_class == class && target_subclass == subclass {
+                return (bus, slot, 0x00);
+            }
+
+            /* If the bit 7 is not set, the device has NOT multiple functions */
+            if pci_get_header_type(bus, slot, 0x00) & 0x80 == 0x00 {
+                continue;
+            }
+
+            /* Otherwise check through the device's other functions for the given class 
+               and subclass code */
+            for function in 1u8..8u8 {
+                let target_class: u8 = pci_get_class(bus, slot, function);
+                let target_subclass: u8 = pci_get_subclass(bus, slot, function);
+
+                /* If found at different function number, return and exist */
+                if target_class == class && target_subclass == subclass {
+                    return (bus, slot, function);
+                }
+            }
+        }
+    }
+
+    /* If iterated through all the devices and not found, return a triple of 0xFF */
+    return (0xFF, 0xFF, 0xFF);
 }
