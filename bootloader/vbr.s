@@ -27,8 +27,8 @@ main64:
     mov ax, '2@'
     mov [0xb800C], ax 
 
-    ; mov rsp, 0x9000                 ; Set stack at 0x9000  
-    ; mov rbp, rsp
+    mov rsp, 0x400000                 ; Set stack at 0x9000  
+    mov rbp, rsp
 
     call clear_screen
 
