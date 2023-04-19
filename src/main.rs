@@ -49,7 +49,7 @@ pub extern "C" fn _start() -> ! {
     qemu_print_hex(c as u32);
 
     qemu_print!("Hello {} from a macro!", "world"); 
-    main(); // println!("Hello world!");
+    main(); // println!("Hello world!"); x2
     loop {}
 }
 
@@ -87,56 +87,11 @@ fn panicking_function() -> ! {
     loop {}
 }
 
-// this feels so ghetto but it's necessary to define these macros here
-// because 
-#[macro_export]
-macro_rules! print {
-    // only a string literal
-    ($string:expr) => {{
-        unsafe {
-            WRITER.write_str($string);
-            WRITER.newline();
-        }
-    }};
-    // a string literal w/ args
-    ($string:expr, $($arg:tt)*) => {{
-        let mut formatted_string = String::<{FORMAT_STRING_SIZE}>::new();
-        write!(&mut formatted_string, $string, $($arg)*).unwrap();
-        unsafe { 
-            WRITER.write_str(&formatted_string);
-            WRITER.newline(); 
-        }
-    }};
-}
 
-#[macro_export]
-macro_rules! println {
-    // no args
-    () => {{
-        unsafe {
-            WRITER.newline();
-        }
-    }};
-    // only a string literal
-    ($string:expr) => {{
-        unsafe {
-            WRITER.write_str($string);
-            WRITER.newline();
-        }
-    }};
-    // a string literal w/ args
-    ($string:expr, $($arg:tt)*) => {{
-        let mut formatted_string = String::<{FORMAT_STRING_SIZE}>::new();
-        write!(&mut formatted_string, $string, $($arg)*).unwrap();
-        unsafe { 
-            WRITER.write_str(&formatted_string);
-            WRITER.newline(); 
-        }
-    }};
-}
 
 
 
 fn main() {
+    println!("Hello world!");
     println!("Hello world!");
 }
