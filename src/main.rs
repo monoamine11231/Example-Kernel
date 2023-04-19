@@ -26,25 +26,30 @@ use drivers::pci::{
 use heapless::String;
 use tooling::qemu_io::{qemu_print_hex, qemu_println};
 use tooling::vga::write_str_at;
+use core::borrow::BorrowMut;
+use tooling::format::*;
+
+use crate::tooling::vga::VGAWriter;
+static mut WRITER: VGAWriter = VGAWriter {
+    buffer: &mut [0],
+    idx: 0
+};
 
 #[no_mangle]
 #[link_section = ".start"]
 pub extern "C" fn _start() -> ! {
+    unsafe { WRITER = VGAWriter::new(); }
+    let string = "Hello world!";
+
     load_idt(&IDTX);
     apic::init();
     let (a, b, c) = pci_device_search_by_class_subclass(0x01, 0x01);
     qemu_print_hex(a as u32);
     qemu_print_hex(b as u32);
     qemu_print_hex(c as u32);
-    write_str_at("Hello World!", 0, 0, 0xb);
 
-    unsafe {    
-        asm!(
-            "div {0:e}",
-            in(reg) 0,
-        )
-    }
-
+    qemu_print!("Hello {} from a macro!", "world"); 
+    main(); // println!("Hello world!");
     loop {}
 }
 
@@ -80,4 +85,58 @@ fn panicking_function() -> ! {
     panic!("This is a test panic.");
 
     loop {}
+}
+
+// this feels so ghetto but it's necessary to define these macros here
+// because 
+#[macro_export]
+macro_rules! print {
+    // only a string literal
+    ($string:expr) => {{
+        unsafe {
+            WRITER.write_str($string);
+            WRITER.newline();
+        }
+    }};
+    // a string literal w/ args
+    ($string:expr, $($arg:tt)*) => {{
+        let mut formatted_string = String::<{FORMAT_STRING_SIZE}>::new();
+        write!(&mut formatted_string, $string, $($arg)*).unwrap();
+        unsafe { 
+            WRITER.write_str(&formatted_string);
+            WRITER.newline(); 
+        }
+    }};
+}
+
+#[macro_export]
+macro_rules! println {
+    // no args
+    () => {{
+        unsafe {
+            WRITER.newline();
+        }
+    }};
+    // only a string literal
+    ($string:expr) => {{
+        unsafe {
+            WRITER.write_str($string);
+            WRITER.newline();
+        }
+    }};
+    // a string literal w/ args
+    ($string:expr, $($arg:tt)*) => {{
+        let mut formatted_string = String::<{FORMAT_STRING_SIZE}>::new();
+        write!(&mut formatted_string, $string, $($arg)*).unwrap();
+        unsafe { 
+            WRITER.write_str(&formatted_string);
+            WRITER.newline(); 
+        }
+    }};
+}
+
+
+
+fn main() {
+    println!("Hello world!");
 }
