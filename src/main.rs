@@ -39,18 +39,16 @@ static mut WRITER: VGAWriter = VGAWriter {
 #[link_section = ".start"]
 pub extern "C" fn _start() -> ! {
     unsafe { WRITER = VGAWriter::new(); }
-    let string = "Hello world!";
+    let mut i = 0;
 
     load_idt(&IDTX);
     apic::init();
     let (a, b, c) = pci_device_search_by_class_subclass(0x01, 0x01);
-    qemu_print_hex(a as u32);
-    qemu_print_hex(b as u32);
-    qemu_print_hex(c as u32);
-
-    qemu_print!("Hello {} from a macro!", "world"); 
-    main(); // println!("Hello world!"); x2
-    loop {}
+    loop {
+        waste_time(300000);
+        i += 1;
+        println!("Hello world {}", i);
+    }
 }
 
 lazy_static! {
@@ -87,11 +85,6 @@ fn panicking_function() -> ! {
     loop {}
 }
 
-
-
-
-
-fn main() {
-    println!("Hello world!");
-    println!("Hello world!");
+fn waste_time(time: u64) {
+    for i in 0..time {}
 }

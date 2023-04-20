@@ -16,7 +16,7 @@ macro_rules! format {
 macro_rules! qemu_print {
     // only a string literal
     ($string:expr) => {{
-        crate::tooling::qemu_io::qemu_print(&string);
+        crate::tooling::qemu_io::qemu_print(&$string);
     }};
     // a string literal w/ args
     ($string:expr, $($arg:tt)*) => {{
@@ -27,12 +27,34 @@ macro_rules! qemu_print {
 }
 
 #[macro_export]
+macro_rules! qemu_println {
+    // no args
+    () => {{
+        unsafe {
+            qemu_print("\n");
+        }
+    }};
+    // only a string literal
+    ($string:expr) => {{
+        let mut formatted_string = String::<{FORMAT_STRING_SIZE}>::new();
+        write!(&mut formatted_string, $string).unwrap();
+        formatted_string.push("\n");
+        crate::tooling::qemu_io::qemu_print(&formatted_string);
+    }};
+    // a string literal w/ args
+    ($string:expr, $($arg:tt)*) => {{
+        let mut formatted_string = String::<{FORMAT_STRING_SIZE}>::new();
+        write!(&mut formatted_string, $string, $($arg)*).unwrap();
+        formatted_string.push('\n');
+        crate::tooling::qemu_io::qemu_print(&formatted_string);
+    }};
+}
+#[macro_export]
 macro_rules! print {
     // only a string literal
     ($string:expr) => {{
         unsafe {
             WRITER.write_str($string);
-            WRITER.newline();
         }
     }};
     // a string literal w/ args
@@ -41,7 +63,6 @@ macro_rules! print {
         write!(&mut formatted_string, $string, $($arg)*).unwrap();
         unsafe { 
             WRITER.write_str(&formatted_string);
-            WRITER.newline(); 
         }
     }};
 }

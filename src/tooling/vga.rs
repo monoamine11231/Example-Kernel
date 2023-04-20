@@ -12,7 +12,7 @@ impl VGAWriter {
             let vga_buffer_slice = core::slice::from_raw_parts_mut(vga_offset, 4000); // (rows * cols) * (chars + color)
             VGAWriter {
                 buffer: vga_buffer_slice,
-                idx: 0,
+                idx: 3840,
             }
         }
     }
@@ -28,7 +28,8 @@ impl VGAWriter {
     }
     pub fn newline(&mut self) {
         self.idx = (self.idx / 160) * 160;
-        self.idx += 160;
+        // self.idx += 160;
+        self.shift_up(1);
     }
     pub fn writeln_color(&mut self, s: &str, color: Option<u8>) -> core::fmt::Result {
         let res = self.write_color(s, color);
@@ -59,6 +60,24 @@ impl VGAWriter {
             }
         }
         self.idx = start_pos + s.len();
+    }
+
+/*     fn shift_up(&mut self, lines: usize) {
+        let len = 80 * lines;
+        let mut bytes = &self.buffer[len..4000];
+        
+        let mut result = [0; 4000];
+        result[(4000 - len)..].copy_from_slice(bytes);
+        self.buffer.copy_from_slice(&result);
+    } */
+
+    fn shift_up(&mut self, lines: usize) {
+        let len = 160 * lines;
+        let mut result: [u8; 4000] = [0; 4000];
+        result[..(4000 - len)].copy_from_slice(&self.buffer[len..4000]);
+        self.buffer.copy_from_slice(&result);
+
+        
     }
 }
 impl Write for VGAWriter {
