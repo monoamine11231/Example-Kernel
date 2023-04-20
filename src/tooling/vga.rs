@@ -3,7 +3,12 @@ use core::fmt::Write;
 pub struct VGAWriter {
     pub buffer: &'static mut [u8],
     pub idx: usize,
+    pub color: u8,
 }
+
+
+
+
 
 impl VGAWriter {
     pub fn new() -> Self {
@@ -13,6 +18,7 @@ impl VGAWriter {
             VGAWriter {
                 buffer: vga_buffer_slice,
                 idx: 3840,
+                color: 0xf
             }
         }
     }
@@ -82,7 +88,7 @@ impl VGAWriter {
 }
 impl Write for VGAWriter {
     fn write_str(&mut self, s: &str) -> core::fmt::Result {
-        self.write_color(s, None)
+        self.write_color(s, Some(self.color))
     }
 }
 pub fn write_str(s: &str, writer: Option<VGAWriter>, color: u8) -> VGAWriter {

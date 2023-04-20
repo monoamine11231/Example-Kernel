@@ -1,5 +1,9 @@
 use crate::tooling::vga;
 use crate::tooling::vga::VGAWriter;
+use crate::WRITER;
+use crate::tooling::format;
+use crate::{println, FORMAT_STRING_SIZE};
+use heapless::String;
 use core::arch::asm;
 use core::fmt::Write;
 use core::panic::PanicInfo;
@@ -110,19 +114,23 @@ fn dump_current_frame() {}
 
 /// This function is called on panic.
 #[panic_handler]
+// i commented old code instead of removing it cuz I am not sure if i broke something while rewriting this
 pub fn panic(info: &PanicInfo) -> ! {
-    let mut vga: VGAWriter = VGAWriter::new();
-    vga.write_color("PANIC", Some(0xc)); // Print "PANIC" at row 2, column 0 with color 0xc (light red)
+    //let mut vga: VGAWriter = VGAWriter::new();
+    unsafe {
+        WRITER.color = 0xc;
+        println!("PANIC");
 
-    if let Some(location) = info.location() {
-        print_location(&mut vga, location);
-    }
+        if let Some(location) = info.location() {
+            println!("{}", location); //print_location(&mut WRITER, location);
+        }
 
-    if let Some(message) = info.message() {
-        print_message(*message, None);
+        if let Some(message) = info.message() {
+            println!("{}", message); // message(*message, None);
+        }
+        WRITER.newline();
+        WRITER.newline();
+        // stack_trace(&mut WRITER);
     }
-    vga.newline();
-    vga.newline();
-    stack_trace(&mut vga);
     loop {}
 }

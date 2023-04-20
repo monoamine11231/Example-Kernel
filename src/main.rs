@@ -32,7 +32,8 @@ use tooling::format::*;
 use crate::tooling::vga::VGAWriter;
 static mut WRITER: VGAWriter = VGAWriter {
     buffer: &mut [0],
-    idx: 0
+    idx: 0,
+    color: 0xf,
 };
 
 #[no_mangle]
@@ -45,9 +46,8 @@ pub extern "C" fn _start() -> ! {
     apic::init();
     let (a, b, c) = pci_device_search_by_class_subclass(0x01, 0x01);
     loop {
-        waste_time(300000);
-        i += 1;
-        println!("Hello world {}", i);
+        if i % 100_000_000 == 0 { println!("Hello world {}", i); }
+        i += 10000;
     }
 }
 
