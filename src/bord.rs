@@ -2,6 +2,8 @@ use core::mem::size_of;
 
 use core::{arch::asm, panic};
 
+use crate::handlers::InterruptStackFrame;
+
 #[repr(u8)]
 pub enum Ring {
     Zero = 0,
@@ -80,7 +82,7 @@ pub struct IDT {
     pub more_reserved: [IDTEntry; 10],
 }
 
-type HandlerFunc = extern "x86-interrupt" fn();
+type HandlerFunc = extern "x86-interrupt" fn(isf: InterruptStackFrame);
 
 #[repr(C, packed)]
 pub struct IDTEntry {

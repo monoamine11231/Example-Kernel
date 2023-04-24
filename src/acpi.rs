@@ -1,6 +1,6 @@
 use core::mem::size_of;
 
-use crate::tooling::qemu_io::qemu_println;
+use crate::tooling::qemu_io::{qemu_print_hex, qemu_println};
 
 lazy_static! {
     pub static ref RSDPX: &'static RSDP = find_rsdp().unwrap();
@@ -57,7 +57,7 @@ pub struct SDTHeader {
     pub creator_revision: u32,
 }
 
-pub struct RSDT(SDTHeader);
+pub struct RSDT(pub SDTHeader);
 
 pub trait Signature {
     fn get_signature() -> [u8; 4];
@@ -65,6 +65,7 @@ pub trait Signature {
 
 impl RSDT {
     fn from_rsdp(rsdp: &RSDP) -> Option<&RSDT> {
+        qemu_print_hex(rsdp.rsdt_address);
         let res = rsdp.rsdt_address as *const RSDT;
         let res = unsafe { &*res };
 
