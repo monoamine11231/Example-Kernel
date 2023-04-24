@@ -1,4 +1,4 @@
-use core::mem::size_of;
+use core::{arch::asm, mem::size_of};
 
 use crate::tooling::qemu_io::{qemu_print_hex, qemu_println};
 
@@ -83,7 +83,6 @@ impl RSDT {
         A: Signature,
     {
         let entries = (RSDTX.0.length - size_of::<RSDT>() as u32) / 4;
-        panic!("len: {}", entries);
 
         for x in 0..entries {}
         None
@@ -114,4 +113,18 @@ fn find_rsdp() -> Result<&'static RSDP, &'static str> {
     }
 
     Err("could not find rsdp")
+}
+
+pub fn qemu_shutdown() -> ! {
+    unsafe {
+        asm!(
+            "mov dx, 0x604",
+            "mov ax, 0x2000",
+            "out dx, ax",
+            options(nostack, preserves_flags)
+        );
+    };
+    loop {
+        qemu_println("why haven't we shut down yet?");
+    }
 }
