@@ -14,13 +14,10 @@ long_mode:
 ; Clear screen
 call clear_screen
 
-; Stage 2 bootloader message on screen
-mov rax, 'S@T@A@G@'
-mov [0xb8000], rax
-mov eax, 'E@ @'
-mov [0xb8008], eax
-mov ax, '2@'
-mov [0xb800C], ax 
+    mov rsp, 0x400000                 ; Set stack at 0x9000  
+    mov rbp, rsp
+
+    call clear_screen
 
 
 ; Set nice stack

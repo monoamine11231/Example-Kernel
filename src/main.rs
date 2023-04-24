@@ -19,7 +19,9 @@ use core::arch::asm;
 use core::fmt::Write;
 
 use bord::*;
-use graph::*;
+use drivers::pci::pci_device_search_by_class_subclass;
+use heapless::String;
+use tooling::qemu_io::{qemu_print_hex, qemu_println};
 use tooling::vga::write_str_at;
 use utils::qemu_io::{qemu_print_nln, qemu_println};
 
@@ -49,6 +51,20 @@ pub extern "C" fn _start() -> ! {
         )
     }
     */
+    apic::init();
+    let (a, b, c) = pci_device_search_by_class_subclass(0x01, 0x01);
+    qemu_print_hex(RSDTX.0.length);
+    qemu_print_hex(a as u32);
+    qemu_print_hex(b as u32);
+    qemu_print_hex(c as u32);
+    write_str_at("Hello World!", 0, 0, 0xb);
+
+    // unsafe {
+    //     asm!(
+    //         "div {0:e}",
+    //         in(reg) 0,
+    //     )
+    // }
 
     loop {}
 }
