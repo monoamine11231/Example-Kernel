@@ -12,6 +12,7 @@ mod bord;
 mod drivers;
 mod graph;
 mod handlers;
+mod math;
 mod tooling;
 mod utils;
 use core::arch::asm;
@@ -24,6 +25,7 @@ use utils::qemu_io::{qemu_print_nln, qemu_println};
 
 use crate::graph::graphics;
 use crate::graph::planar_writer;
+use crate::math::vec2;
 use crate::utils::qemu_io::qemu_print_num;
 
 #[no_mangle]
@@ -35,7 +37,9 @@ pub extern "C" fn _start() -> ! {
     //qemu_println("hello from serial terminal IO");
     //test_graphics_mode_105_vesa();
     //test_graphics_mode_12();
+
     test_graphics_lib();
+    output_rsp();
     //test_graphics_mode_12();
     /*
     unsafe {

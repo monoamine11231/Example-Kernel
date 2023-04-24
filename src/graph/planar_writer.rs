@@ -109,6 +109,8 @@ impl VGA_planar_writer {
         }
     }
 
+    pub fn write_line() {}
+
     fn reset_ext_memory(&mut self) {
         for i in 0..VGA_planar_writer::VIDEO_MEM_EXT_SZ {
             self.plane_buffer[i] = 0;
