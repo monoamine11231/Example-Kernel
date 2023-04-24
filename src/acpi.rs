@@ -116,6 +116,7 @@ fn find_rsdp() -> Result<&'static RSDP, &'static str> {
 }
 
 pub fn qemu_shutdown() -> ! {
+    // reference https://wiki.osdev.org/Shutdown
     unsafe {
         asm!(
             "mov dx, 0x604",
