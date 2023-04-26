@@ -19,6 +19,7 @@ use core::fmt::Write;
 use core::str::Bytes;
 
 use acpi::*;
+use apic::MADTX;
 use bord::*;
 use drivers::pci::pci_device_search_by_class_subclass;
 use heapless::String;
