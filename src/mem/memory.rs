@@ -191,8 +191,7 @@ impl AddrSpace {
             let mut k = 0;
             while k < 512 {
                 // + paging_offset + 0xFFFFFFFFFF
-                new_pt.entries[k] =
-                    3 + ((((i << 21) + (j << 12) + k * 0x1000) as u64) + (0x600 * 0x1000) as u64); // 3 = page_rw | page_present
+                new_pt.entries[k] = 3 + ((((i << 21) + (j << 12) + k * 0x1000) as u64) as u64); // 3 = page_rw | page_present
 
                 k += 1;
             }
@@ -210,7 +209,7 @@ impl AddrSpace {
         );
         qemu_fmt_println(
             "highest_address {}",
-            format_args!("virt length: {:#x}", 512 * 512 * 4096),
+            format_args!("virt length: {:#x}", 400 * 512 * 4096),
         );
 
         new_pml4 as *const PT
