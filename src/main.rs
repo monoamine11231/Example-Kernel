@@ -2,12 +2,15 @@
 #![no_main]
 #![feature(panic_info_message)]
 #![feature(strict_provenance)]
+#![feature(ptr_from_ref)]
+
 #![feature(abi_x86_interrupt)]
 #![allow(unused, unconditional_panic)]
 
 #[macro_use]
 extern crate lazy_static;
 
+pub mod mem;
 mod acpi;
 mod apic;
 mod bord;
@@ -18,6 +21,7 @@ use core::arch::asm;
 use core::fmt::Write;
 use core::str::Bytes;
 
+use mem::memory::{*, self};
 use acpi::*;
 use apic::MADTX;
 use bord::*;
@@ -29,10 +33,12 @@ use tooling::vga::write_str_at;
 #[no_mangle]
 #[link_section = ".start"]
 pub extern "C" fn _start() -> ! {
+
     load_idt(&IDTX);
+    memory::init();
     apic::init();
     let (a, b, c) = pci_device_search_by_class_subclass(0x01, 0x01);
-    qemu_print_hex(RSDTX.0.length);
+    //qemu_print_hex(RSDTX.0.length);
     qemu_print_hex(a as u32);
     qemu_print_hex(b as u32);
     qemu_print_hex(c as u32);

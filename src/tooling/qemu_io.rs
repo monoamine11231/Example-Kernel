@@ -1,4 +1,5 @@
 use core::fmt::Write;
+use core::fmt::Arguments;
 
 use super::serial::{outb, outw};
 
@@ -26,6 +27,15 @@ pub fn qemu_print(string: &str) {
     for b in string.bytes() {
         outb(0x3F8, b);
     }
+}
+pub fn qemu_fmt_println(string: &str, fmt : core::fmt::Arguments) {
+    let mut writer = SerialWriter::new();
+    
+    write!(
+                writer,
+                "{}\n",
+                fmt
+            ); 
 }
 
 /// Prints a string with newline to QEMU serial stdout
