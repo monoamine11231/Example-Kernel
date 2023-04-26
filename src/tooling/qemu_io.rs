@@ -33,7 +33,11 @@ pub fn qemu_fmt_println(string: &str, fmt: core::fmt::Arguments) {
 
     write!(writer, "{}\n", fmt);
 }
+pub fn serial_fmt_println(fmt: core::fmt::Arguments) {
+    let mut writer = SerialWriter::new();
 
+    write!(writer, "{}\n", fmt);
+}
 /// Prints a string with newline to QEMU serial stdout
 pub fn qemu_println(string: &str) {
     qemu_print(string);
