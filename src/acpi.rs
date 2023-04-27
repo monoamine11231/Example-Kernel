@@ -71,7 +71,7 @@ impl RSDT {
 
         // panic since it is a physical addr
 
-        if !res.validate() {
+        if !res.is_valid() {
             return None;
         }
 
@@ -88,7 +88,7 @@ impl RSDT {
         None
     }
 
-    pub fn validate(&self) -> bool {
+    pub fn is_valid(&self) -> bool {
         self.0.signature.eq(b"RSDT") && sum_struct!(self) == 0
     }
 }
@@ -122,7 +122,7 @@ pub fn qemu_shutdown() -> ! {
             "mov dx, 0x604",
             "mov ax, 0x2000",
             "out dx, ax",
-            options(nostack, preserves_flags)
+            options(nostack, preserves_flags, noreturn, nomem)
         );
     };
     loop {
