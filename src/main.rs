@@ -9,19 +9,16 @@
 #[macro_use]
 extern crate lazy_static;
 
-mod acpi;
-mod apic;
 mod bord;
 mod drivers;
 mod handlers;
 pub mod mem;
+mod pic;
 mod tooling;
 use core::arch::asm;
 use core::fmt::Write;
 use core::str::Bytes;
 
-use acpi::*;
-use apic::MADTX;
 use bord::*;
 use drivers::pci::pci_device_search_by_class_subclass;
 use heapless::String;
@@ -29,14 +26,16 @@ use mem::memory::{self, *};
 use tooling::qemu_io::{qemu_print_hex, qemu_println};
 use tooling::vga::write_str_at;
 
+use crate::handlers::pic_intr_handler;
+
 #[no_mangle]
 #[link_section = ".start"]
 pub extern "C" fn _start() -> ! {
     load_idt(&IDTX);
     memory::init();
-    apic::init();
+    pic::init();
+
     let (a, b, c) = pci_device_search_by_class_subclass(0x01, 0x01);
-    //qemu_print_hex(RSDTX.0.length);
     qemu_print_hex(a as u32);
     qemu_print_hex(b as u32);
     qemu_print_hex(c as u32);
@@ -74,6 +73,7 @@ lazy_static! {
         simd_floating_point: IDTEntry::new(handlers::simd_floating_point, Ring::Zero),
         virtualization: IDTEntry::new(handlers::virtualization, Ring::Zero),
         security_exception: IDTEntry::new(handlers::security_exception, Ring::Zero),
+        interrupts: [IDTEntry::new(pic_intr_handler, Ring::Zero); 16],
         ..Default::default()
     };
 }

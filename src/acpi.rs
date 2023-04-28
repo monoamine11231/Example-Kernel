@@ -1,6 +1,7 @@
 use core::{arch::asm, mem::size_of};
 
-use crate::tooling::qemu_io::{qemu_print_hex, qemu_println};
+use crate::tooling::qemu_io::{qemu_print_hex, qemu_println, SerialWriter};
+use core::fmt::Write;
 
 lazy_static! {
     pub static ref RSDPX: &'static RSDP = find_rsdp().unwrap();
@@ -45,6 +46,8 @@ impl RSDP {
 }
 
 #[repr(C, packed)]
+#[derive(Debug)]
+
 pub struct SDTHeader {
     pub signature: [u8; 4],
     pub length: u32,
@@ -57,7 +60,10 @@ pub struct SDTHeader {
     pub creator_revision: u32,
 }
 
-pub struct RSDT(pub SDTHeader);
+#[repr(C, packed)]
+pub struct RSDT {
+    pub h: SDTHeader,
+}
 
 pub trait Signature {
     fn get_signature() -> [u8; 4];
@@ -82,14 +88,14 @@ impl RSDT {
     where
         A: Signature,
     {
-        let entries = (RSDTX.0.length - size_of::<RSDT>() as u32) / 4;
+        let entries = (RSDTX.h.length - size_of::<RSDT>() as u32) / 4;
 
         for x in 0..entries {}
         None
     }
 
     pub fn is_valid(&self) -> bool {
-        self.0.signature.eq(b"RSDT") && sum_struct!(self) == 0
+        self.h.signature.eq(b"RSDT") && sum_struct!(self) == 0
     }
 }
 

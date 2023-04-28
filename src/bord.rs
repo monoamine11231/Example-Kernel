@@ -80,11 +80,13 @@ pub struct IDT {
     pub virtualization: IDTEntry,
     pub security_exception: IDTEntry,
     pub more_reserved: [IDTEntry; 10],
+    pub interrupts: [IDTEntry; 16],
 }
 
 type HandlerFunc = extern "x86-interrupt" fn(isf: InterruptStackFrame);
 
 #[repr(C, packed)]
+#[derive(Clone, Copy)]
 pub struct IDTEntry {
     offset1: u16,
     segment_selector: SegmentSelector,
@@ -129,6 +131,7 @@ impl Default for IDTEntry {
 }
 
 // https://wiki.osdev.org/Segment_Selector
+#[derive(Clone, Copy)]
 struct SegmentSelector(u16);
 
 impl SegmentSelector {

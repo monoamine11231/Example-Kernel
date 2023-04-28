@@ -3,6 +3,7 @@ use core::panic::PanicInfo;
 use crate::tooling::{
     self,
     qemu_io::{qemu_print_hex, qemu_println},
+    serial::{inb, outb},
     vga::write_str_at,
 };
 
@@ -20,6 +21,16 @@ pub extern "x86-interrupt" fn zero_div(isf: InterruptStackFrame) {
 
 pub extern "x86-interrupt" fn double_fault(isf: InterruptStackFrame) {
     write_str_at("err: reee", 5, 0, 0xde)
+}
+
+pub extern "x86-interrupt" fn pic_intr_handler(isf: InterruptStackFrame) {
+    // wrong args i think
+
+    let scancode = inb(0x60);
+    qemu_print_hex(scancode as u32);
+
+    outb(0xA0, 0x20);
+    outb(0x20, 0x20);
 }
 
 #[macro_export]
