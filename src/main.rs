@@ -20,6 +20,7 @@ use core::fmt::Write;
 use core::str::Bytes;
 
 use bord::*;
+use drivers::ide::IDE;
 use drivers::pci::pci_device_search_by_class_subclass;
 use heapless::String;
 use mem::memory::{self, *};
@@ -35,10 +36,19 @@ pub extern "C" fn _start() -> ! {
     memory::init();
     pic::init();
 
-    let (a, b, c) = pci_device_search_by_class_subclass(0x01, 0x01);
-    qemu_print_hex(a as u32);
-    qemu_print_hex(b as u32);
-    qemu_print_hex(c as u32);
+    let mut ide_processor: IDE = Default::default();
+    ide_processor.init();
+
+    ide_processor.ata_access_pio(
+        drivers::ide::ATADirection::Read,
+        0,
+        0x000,
+        3,
+        0x41000000,
+    );
+    let a: u32 = unsafe { *(0x410005FC as *const u32) };
+    //qemu_print_hex(a);
+
     write_str_at("Hello World!", 0, 0, 0xb);
 
     // unsafe {
