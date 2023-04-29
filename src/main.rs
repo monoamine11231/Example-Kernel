@@ -21,7 +21,7 @@ use core::str::Bytes;
 
 use bord::*;
 use drivers::ide::IDE;
-use drivers::pci::pci_device_search_by_class_subclass;
+pub mod fat32;
 use heapless::String;
 use mem::memory::{self, *};
 use tooling::qemu_io::{qemu_print_hex, qemu_println};
@@ -34,19 +34,16 @@ use crate::handlers::pic_intr_handler;
 pub extern "C" fn _start() -> ! {
     load_idt(&IDTX);
     memory::init();
-    pic::init();
+    //pic::init();
+
+    let buf: [u8; 10] = [0x10u8; 10];
+
 
     let mut ide_processor: IDE = Default::default();
     ide_processor.init();
+    let fs_processor = fat32::FAT32::new(&mut ide_processor);
+    
 
-    ide_processor.ata_access_pio(
-        drivers::ide::ATADirection::Read,
-        0,
-        0x000,
-        3,
-        0x41000000,
-    );
-    let a: u32 = unsafe { *(0x410005FC as *const u32) };
     //qemu_print_hex(a);
 
     write_str_at("Hello World!", 0, 0, 0xb);

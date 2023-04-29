@@ -719,7 +719,7 @@ impl IDE {
         drive: u8,
         address: u64,
         nsects: u8,
-        edi: u32,
+        edi: u64,
     ) {
         let channel: ATAChannel = self.devices[drive as usize].channel;
         let is_slave: u8 = self.devices[drive as usize].drive as u8;
@@ -831,7 +831,7 @@ impl IDE {
 
         IDE::write_chreg(&self, channel, ATARegister::CommandORStatus, command as u8);
 
-        let mut edi_offset: u32 = edi;
+        let mut edi_offset: u64 = edi;
         if direction == ATADirection::Read {
             for i in 0..nsects {
                 IDE::polling(&self, channel).unwrap();
