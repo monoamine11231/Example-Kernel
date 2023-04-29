@@ -418,13 +418,13 @@ impl IDE {
             }
         }
 
-        for i in 0usize..4usize {
-            if self.devices[i].exists {
-                qemu_println("Found device:");
-                qemu_println(self.devices[i].model.as_str());
-                qemu_print_hex(self.devices[i].size);
-            }
-        }
+        // for i in 0usize..4usize {
+        //     if self.devices[i].exists {
+        //         qemu_println("Found device:");
+        //         qemu_println(self.devices[i].model.as_str());
+        //         qemu_print_hex(self.devices[i].size);
+        //     }
+        // }
     }
 
     pub fn read_chreg(&self, channel: ATAChannel, register: ATARegister) -> u8 {
@@ -632,7 +632,7 @@ impl IDE {
         }
     }
 
-    pub fn polling(&self, channel: ATAChannel) -> Result<u8, u8> {
+    pub fn polling(&self, channel: ATAChannel) -> Result<u8, &'static str> {
         /* Delay 400ns by reading alt status port 4 times, which takes in total 400ns */
         for i in 0..4 {
             IDE::read_chreg(self, channel, ATARegister::ControlORAltStatus);
@@ -648,17 +648,17 @@ impl IDE {
         let state: u8 = IDE::read_chreg(&self, channel, ATARegister::CommandORStatus);
         if ATAStatus::Error.presence(state) {
             /* General error */
-            return Err(2);
+            return Err("General error happened when polling the drive!");
         }
 
         if ATAStatus::DriveWriteFault.presence(state) {
             /* Drive write fault */
-            return Err(1);
+            return Err("Drive write fault happened when polling the drive!");
         }
 
         if !ATAStatus::DataRequestReady.presence(state) {
             /* Data request ready bit should be set */
-            return Err(3);
+            return Err("The data request ready bit was not set when polling the drive!");
         }
 
         Ok(0)
@@ -849,7 +849,7 @@ impl IDE {
             }
             return;
         }
-        
+
         /* Write PIO */
         for i in 0..nsects {
             IDE::polling(&self, channel);
