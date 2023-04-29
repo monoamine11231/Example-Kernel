@@ -1,8 +1,10 @@
+use heapless::String;
+
 use crate::drivers::ide::{self, ATADirection, IDE};
-use crate::tooling::qemu_io::{qemu_print_hex, qemu_println};
+use crate::tooling::qemu_io::{qemu_print, qemu_print_hex, qemu_println};
 
 #[repr(C, packed)]
-#[derive(Default, Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct BootSector {
     /* All numbers are in little endian */
     boot_jmp: [u8; 3],
@@ -22,7 +24,7 @@ pub struct BootSector {
 }
 
 #[repr(C, packed)]
-#[derive(Default, Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct ExtendedBootRecord {
     sectors_per_fat: u32,
     flags: u16,
@@ -42,15 +44,17 @@ pub struct ExtendedBootRecord {
 
 /* The part of FSInfo struct after the 480 reserved bytes */
 #[repr(C, packed)]
-#[derive(Default, Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct FSInfoMain {
+    signature_1: u32,
+    reserved: [u8; 480],
     signature_2: u32,
     last_free_cluster: u32,
     start_cluster: u32,
 }
 
 #[repr(C, packed)]
-#[derive(Default, Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct LongDirectoryEntry {
     order: u8,
     first_u8: [u8; 10],
@@ -62,10 +66,11 @@ pub struct LongDirectoryEntry {
     third_u8: [u8; 4],
 }
 
-#[repr(C, packed)]
+#[repr(C, align(32))]
 #[derive(Default, Debug, Copy, Clone)]
 pub struct ShortDirectoryEntry {
-    file_name: [u8; 11],
+    file_name: [u8; 8],
+    file_ext: [u8; 3],
     file_attribute: u8,
     reserved_windows_nt: u8,
     creation_time_100ms: u8,
@@ -79,7 +84,7 @@ pub struct ShortDirectoryEntry {
     file_size: u32,
 }
 
-#[repr(C, packed)]
+#[repr(C, align(32))]
 #[derive(Default, Debug, Copy, Clone)]
 pub struct DirectoryEntry {
     short: ShortDirectoryEntry,
@@ -113,6 +118,83 @@ impl DirectoryEntry {
             return Some((Self { short: short }, size, skip));
         };
     }
+
+    /// Filename given with extension in point form
+    pub fn compare_filename(&self, filename: &str) -> Result<bool, &'static str> {
+        let mut part_counter: u8 = 0x00;
+        for part in filename.split('.') {
+            match part_counter {
+                0x00 => {
+                    let mut s: String<8> = String::new();
+
+                    for c in self
+                        .short
+                        .file_name
+                        .iter()
+                        .filter(|x| x.ne(&&0x20))
+                        .into_iter()
+                    {
+                        s.push(*c as char);
+                    }
+
+                    if s.as_str().cmp(part) != core::cmp::Ordering::Equal {
+                        return Ok(false);
+                    }
+                }
+                0x01 => {
+                    let mut s: String<3> = String::new();
+
+                    for c in self
+                        .short
+                        .file_ext
+                        .iter()
+                        .filter(|x| x.ne(&&0x20))
+                        .into_iter()
+                    {
+                        s.push(*c as char);
+                    }
+
+                    if s.as_str().cmp(part) != core::cmp::Ordering::Equal {
+                        return Ok(false);
+                    }
+                }
+                _ => return Err("Given filename is not valid!"),
+            }
+
+            part_counter += 1;
+        }
+
+        /* If filename is without extension, don't forget to check if the extension
+         * is empty as well */
+        if part_counter == 1 {
+            let mut s: String<3> = String::new();
+
+            for c in self
+                .short
+                .file_ext
+                .iter()
+                .filter(|x| x.ne(&&0x20))
+                .into_iter()
+            {
+                s.push(*c as char);
+            }
+
+            if s.len() != 0x00 {
+                return Ok(false);
+            }
+        }
+
+        Ok(true)
+    }
+}
+
+pub enum FATEntry {}
+
+impl FATEntry {
+    #[inline]
+    pub fn end(entry: u32) -> bool {
+        return entry >= 0x0FFFFFF8;
+    }
 }
 
 pub struct FAT32<'a> {
@@ -131,83 +213,127 @@ pub struct FAT32<'a> {
 }
 
 impl<'a> FAT32<'a> {
-    pub fn new(ide_processor: &'a mut IDE) -> Self {
-        let structs = read_fat32_structs(ide_processor).unwrap();
+    pub fn new(ide_processor: &'a mut IDE) -> Result<Self, &'static str> {
+        ide_processor.ata_access_pio(ATADirection::Read, 0, 0x01, 1, 0x41000000);
 
-        let mut total_sectors: u32 = structs.0.num_sectors as u32;
+        let bootsector: BootSector = unsafe { *(0x41000000 as *const _) };
+        let extended_boot_record: &ExtendedBootRecord = unsafe { &*(0x41000024 as *const _) };
+        if extended_boot_record.signature != 0x28 && extended_boot_record.signature != 0x29 {
+            return Err("Signature in extended boot record is not valid!");
+        }
+
+        /* Check byte by byte, since the u64 is misaligned :( */
+        let system_identifier_match: [u8; 8] = [0x46, 0x41, 0x54, 0x33, 0x32, 0x20, 0x20, 0x20];
+        for i in 0usize..8usize {
+            if system_identifier_match[i] != extended_boot_record.system_identifier[i] {
+                return Err("System identifier string in extended boot record is not valid!");
+            }
+        }
+
+        let fsinfo_address: u64 =
+            0x41000000 + 0x200 * extended_boot_record.fsinfo_sector_num as u64;
+        ide_processor.ata_access_pio(
+            ATADirection::Read,
+            0,
+            bootsector.num_hidden_sectors as u64 + extended_boot_record.fsinfo_sector_num as u64,
+            1,
+            fsinfo_address,
+        );
+
+        let fsinfo: &FSInfoMain = unsafe { &*(fsinfo_address as *const _) };
+        if fsinfo.signature_1 != 0x41615252 || fsinfo.signature_2 != 0x61417272 {
+            return Err("Signatures in FSInfo struct are not valid!");
+        }
+
+        let mut total_sectors: u32 = bootsector.num_sectors as u32;
         if total_sectors == 0x00 {
-            total_sectors = structs.0.large_sector_count;
+            total_sectors = bootsector.large_sector_count;
         }
 
         /* Load FAT */
         ide_processor.ata_access_pio(
             ATADirection::Read,
             0,
-            structs.0.num_hidden_sectors as u64 + structs.0.reserved_sectors as u64,
-            (structs.1.sectors_per_fat * structs.0.num_fats as u32) as u8,
-            0x41000000,
+            bootsector.num_hidden_sectors as u64 + bootsector.reserved_sectors as u64,
+            (extended_boot_record.sectors_per_fat * bootsector.num_fats as u32) as u8,
+            0x42000000,
         );
 
-        Self {
+        Ok(Self {
             ide_processor: ide_processor,
-            fat_address: 0x41000000,
+            fat_address: 0x42000000,
 
-            partition_start_lba: structs.0.num_hidden_sectors,
-            reserved_sectors: structs.0.reserved_sectors,
-            sectors_per_cluster: structs.0.sectors_per_cluster,
-            fat_num: structs.0.num_fats,
-            root_dir_num: structs.0.num_root_dir_entries,
+            partition_start_lba: bootsector.num_hidden_sectors,
+            reserved_sectors: bootsector.reserved_sectors,
+            sectors_per_cluster: bootsector.sectors_per_cluster,
+            fat_num: bootsector.num_fats,
+            root_dir_num: bootsector.num_root_dir_entries,
             total_sectors: total_sectors,
-            bytes_per_sector: structs.0.bytes_per_sector,
-            root_dir_cluster: structs.1.cluster_num_root_dir,
-            sectors_per_fat: structs.1.sectors_per_fat,
-        }
+            bytes_per_sector: bootsector.bytes_per_sector,
+            root_dir_cluster: extended_boot_record.cluster_num_root_dir,
+            sectors_per_fat: extended_boot_record.sectors_per_fat,
+        })
     }
-
-    pub fn find_dir_entry_by_filename(
+    pub fn search_in_dir(
         &mut self,
-        filename: &str,
-    ) -> Result<DirectoryEntry, &'static str> {
-        const LOAD_ADDR: u64 = 0x41500000;
+        chain: u32,
+        name: &str,
+    ) -> Result<Option<DirectoryEntry>, &'static str> {
+        const LOAD_ADDR: u64 = 0x43000000;
 
-        /* 0x02 is the first valid cluster! */
-        let mut cluster_counter: usize = 0x02;
-        self.ide_processor.ata_access_pio(
-            ATADirection::Read,
-            0,
-            self.cluster_lba(cluster_counter),
-            self.sectors_per_cluster,
-            LOAD_ADDR,
-        );
+        /* main FAT where we are searching clusters */
+        let fat: *const u32 = self.fat_address as *const u32;
+        let mut current_chain: u32 = chain;
+        while !FATEntry::end(current_chain) {
+            self.ide_processor.ata_access_pio(
+                ATADirection::Read,
+                0,
+                self.cluster_lba(current_chain as usize),
+                self.sectors_per_cluster,
+                LOAD_ADDR,
+            );
 
-        let mut dir_offset: u64 = LOAD_ADDR;
-        let dir_end: u64 =
-            LOAD_ADDR + (self.sectors_per_cluster as u64) * self.bytes_per_sector as u64;
-        /* If first byte is 0 in directory, it indicates the end of root directory */
-        unsafe {
+            let mut dir_offset: u64 = LOAD_ADDR;
             while let Some((entry, size, skip)) = DirectoryEntry::fetch(dir_offset) {
                 dir_offset += size as u64;
-                /* Unused entry */
-                if skip {
+                /* Deleted entry or long name entry - move on */
+                if skip || entry.short.file_attribute == 0x0F {
                     continue;
                 }
 
-                /* If not done, load one more cluster */
-                if dir_offset >= dir_end {
-                    cluster_counter += 1;
-                    self.ide_processor.ata_access_pio(
-                        ATADirection::Read,
-                        0,
-                        self.cluster_lba(cluster_counter),
-                        self.sectors_per_cluster,
-                        LOAD_ADDR,
-                    );
-                    dir_offset = LOAD_ADDR;
+                if entry.compare_filename(name)? {
+                    return Ok(Some(entry));
                 }
+            }
+
+            current_chain = unsafe { *fat.offset(current_chain as isize) } & 0x0FFFFFFF;
+        }
+        Ok(None)
+    }
+
+    pub fn traverse(&mut self, filename: &str) -> Result<Option<DirectoryEntry>, &'static str> {
+        let mut found_entry: Option<DirectoryEntry> = None;
+
+        let mut current_chain: u32 = 0x02;
+        for part in filename.split('/') {
+            /* If a directory entry was found, unpack it and search through it */
+            if let Some(entry) = found_entry {
+                if entry.short.file_attribute != 0x10 {
+                    return Err("Trying to search through a file!");
+                }
+
+                /* Assemble the cluster number where the directory is placed */
+                current_chain = (entry.short.high_first_cluster as u32) << 16;
+                current_chain |= entry.short.low_first_entry_cluster as u32;
+            }
+
+            found_entry = self.search_in_dir(current_chain, part)?;
+            if found_entry.is_none() {
+                break;
             }
         }
 
-        Err("asdasdas")
+        Ok(found_entry)
     }
 
     pub fn cluster_lba(&self, cluster: usize) -> u64 {
@@ -216,36 +342,6 @@ impl<'a> FAT32<'a> {
             + (self.fat_num as u64) * (self.sectors_per_fat as u64)
             + (cluster as u64 - 2) * (self.sectors_per_cluster as u64)
     }
-}
-
-fn read_fat32_structs(
-    ide_processor: &mut IDE,
-) -> Result<(BootSector, ExtendedBootRecord, FSInfoMain), &'static str> {
-    ide_processor.ata_access_pio(ATADirection::Read, 0, 0x01, 2, 0x41000000);
-
-    let bootsector: BootSector = unsafe { *(0x41000000 as *const _) };
-    let extended_boot_record: ExtendedBootRecord = unsafe { *(0x41000024 as *const _) };
-    if extended_boot_record.signature != 0x28 && extended_boot_record.signature != 0x29 {
-        return Err("Signature in extended boot record is not valid!");
-    }
-
-    if unsafe { *(extended_boot_record.system_identifier.as_ptr() as *const u64) }
-        != 0x2020203233544146
-    {
-        return Err("System identifier string in extended boot record is not valid!");
-    }
-
-    let fsinfo_address: u64 = 0x41000000 + 0x200 * extended_boot_record.fsinfo_sector_num as u64;
-    if unsafe { *(fsinfo_address as *const u32) } != 0x41615252 {
-        return Err("Lead signature in FSInfo struct is not valid!");
-    }
-
-    let fsinfo: FSInfoMain = unsafe { *((fsinfo_address + 0x1E4) as *const _) };
-    if fsinfo.signature_2 != 0x61417272 {
-        return Err("Second signature in FSInfo struct is not valud!");
-    }
-
-    Ok((bootsector, extended_boot_record, fsinfo))
 }
 
 #[cfg(test)]

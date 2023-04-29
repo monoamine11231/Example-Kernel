@@ -41,7 +41,8 @@ pub extern "C" fn _start() -> ! {
 
     let mut ide_processor: IDE = Default::default();
     ide_processor.init();
-    let fs_processor = fat32::FAT32::new(&mut ide_processor);
+    let mut fs_processor = fat32::FAT32::new(&mut ide_processor).unwrap();
+    qemu_print_hex(fs_processor.traverse("KEK/ABA/LOL3.TXT").unwrap().is_some() as u32);
     
 
     //qemu_print_hex(a);
