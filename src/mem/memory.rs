@@ -358,21 +358,26 @@ pub fn mmap() {}
 pub fn kalloc() {}
 
 // todo : use c_void instead of u64
-// todo : inline asm implementation using movsb
 // copies sz bytes, from -> to
 pub fn kmemcpy(from: *const u8, to: *mut u8, sz: usize) {
-    let mut i: usize = 0;
-    // because ranges are iterators, we use while loops instead to avoid memory issues
-    while i < sz {
-        unsafe { *((to as usize + i) as *mut u8) = *((from as usize + i) as *const u8) }
-        i += 1;
+    unsafe {
+        asm!(
+            "rep movsb",
+            in("rcx") sz,
+            in("rsi") from as u64,
+            in("rdi") to as u64,
+            options(nostack, preserves_flags, nomem)
+        );
     }
 }
 pub fn kmemset(str: *const u8, c: u8, n: usize) {
-    let mut i: usize = 0;
-    // because ranges are iterators, we use while loops instead to avoid memory issues
-    while i < n {
-        unsafe { *((str as usize + i) as *mut u8) = c }
-        i += 1;
+    unsafe {
+        asm!(
+            "rep stosb",
+            in("rcx") n,
+            in("rdi") str as u64,
+            in("al") c,
+            options(nostack, preserves_flags, nomem)
+        )
     }
 }
