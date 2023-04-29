@@ -38,12 +38,13 @@ pub extern "C" fn _start() -> ! {
 
     let buf: [u8; 10] = [0x10u8; 10];
 
-
     let mut ide_processor: IDE = Default::default();
     ide_processor.init();
     let mut fs_processor = fat32::FAT32::new(&mut ide_processor).unwrap();
-    qemu_print_hex(fs_processor.traverse("KEK/ABA/LOL3.TXT").unwrap().is_some() as u32);
-    
+
+    let mut buf: [u8; 64] = [0x00u8; 64];
+    fs_processor.read_file("KEK/ABA/LOL3.TXT", &mut buf, 420);
+    qemu_println(unsafe { core::str::from_utf8_unchecked(&buf) });
 
     //qemu_print_hex(a);
 

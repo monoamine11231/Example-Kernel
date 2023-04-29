@@ -1,6 +1,7 @@
 use heapless::String;
 
 use crate::drivers::ide::{self, ATADirection, IDE};
+use crate::mem::memory::kmemcpy;
 use crate::tooling::qemu_io::{qemu_print, qemu_print_hex, qemu_println};
 
 #[repr(C, packed)]
@@ -186,6 +187,14 @@ impl DirectoryEntry {
 
         Ok(true)
     }
+
+    fn chain(&self) -> u32 {
+        let mut chain: u32 = 0x00000000;
+        chain = (self.short.high_first_cluster as u32) << 16;
+        chain |= self.short.low_first_entry_cluster as u32;
+
+        return chain;
+    }
 }
 
 pub enum FATEntry {}
@@ -274,6 +283,58 @@ impl<'a> FAT32<'a> {
             sectors_per_fat: extended_boot_record.sectors_per_fat,
         })
     }
+
+    pub fn read_file(&mut self, path: &str, to: &mut [u8], n: usize) -> Result<u8, &'static str> {
+        let entryo: Option<DirectoryEntry> = self.traverse(path)?;
+        if entryo.is_none() {
+            return Err("File was not found!");
+        }
+
+        let entry: DirectoryEntry = entryo.unwrap();
+        if entry.short.file_attribute == 0x10 {
+            return Err("File is a directory!");
+        }
+
+        const LOAD_ADDR: u64 = 0x43000000;
+
+        /* main FAT where we are searching clusters */
+        let fat: *const u32 = self.fat_address as *const u32;
+        let mut current_chain: u32 = entry.chain();
+        let mut current_read: u32 = 0x00;
+
+        let mut remaining: usize = core::cmp::min(entry.short.file_size as usize, n);
+        /* Cluster in bytes */
+        let clb: usize = self.bytes_per_sector as usize * self.sectors_per_cluster as usize;
+        while !FATEntry::end(current_chain) {
+            self.ide_processor.ata_access_pio(
+                ATADirection::Read,
+                0,
+                self.cluster_lba(current_chain as usize),
+                self.sectors_per_cluster,
+                LOAD_ADDR,
+            );
+
+            if remaining < clb {
+                kmemcpy(
+                    unsafe { LOAD_ADDR as *const u8 },
+                    unsafe { to.as_mut_ptr() },
+                    remaining,
+                );
+                break;
+            }
+
+            /* Copy one cluster */
+            kmemcpy(
+                unsafe { LOAD_ADDR as *const u8 },
+                unsafe { to.as_mut_ptr() },
+                clb,
+            );
+            remaining -= clb;
+            current_chain = unsafe { *fat.offset(current_chain as isize) } & 0x0FFFFFFF;
+        }
+        Ok(0)
+    }
+
     pub fn search_in_dir(
         &mut self,
         chain: u32,
@@ -311,11 +372,11 @@ impl<'a> FAT32<'a> {
         Ok(None)
     }
 
-    pub fn traverse(&mut self, filename: &str) -> Result<Option<DirectoryEntry>, &'static str> {
+    pub fn traverse(&mut self, path: &str) -> Result<Option<DirectoryEntry>, &'static str> {
         let mut found_entry: Option<DirectoryEntry> = None;
 
         let mut current_chain: u32 = 0x02;
-        for part in filename.split('/') {
+        for part in path.split('/') {
             /* If a directory entry was found, unpack it and search through it */
             if let Some(entry) = found_entry {
                 if entry.short.file_attribute != 0x10 {
@@ -323,8 +384,7 @@ impl<'a> FAT32<'a> {
                 }
 
                 /* Assemble the cluster number where the directory is placed */
-                current_chain = (entry.short.high_first_cluster as u32) << 16;
-                current_chain |= entry.short.low_first_entry_cluster as u32;
+                current_chain = entry.chain();
             }
 
             found_entry = self.search_in_dir(current_chain, part)?;
