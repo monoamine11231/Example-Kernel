@@ -44,6 +44,7 @@ pub extern "C" fn _start() -> ! {
 
     let mut buf: [u8; 64] = [0x00u8; 64];
     fs_processor.read_file("KEK/ABA/LOL3.TXT", &mut buf, 420);
+    fs_processor.delete_directory("KEK/ABA");
     qemu_println(unsafe { core::str::from_utf8_unchecked(&buf) });
 
     //qemu_print_hex(a);

@@ -4,6 +4,9 @@ use crate::drivers::ide::{self, ATADirection, IDE};
 use crate::mem::memory::kmemcpy;
 use crate::tooling::qemu_io::{qemu_print, qemu_print_hex, qemu_println};
 
+/* Temporary until proper memory allocation is fixed */
+const LOAD_ADDR: u64 = 0x43000000;
+
 #[repr(C, packed)]
 #[derive(Debug, Copy, Clone)]
 pub struct BootSector {
@@ -206,19 +209,57 @@ impl FATEntry {
     }
 }
 
+pub struct FAT {
+    iter_offset: u32,
+
+    fat_address: u64,
+    sectors_per_fat: u32,
+    fat_num: u8,
+}
+
+impl FAT {
+    pub fn new(fat_address: u64, sectors_per_fat: u32, fat_num: u8) -> Self {
+        Self {
+            iter_offset: 0x02,
+
+            fat_address: fat_address,
+            sectors_per_fat: sectors_per_fat,
+            fat_num: fat_num,
+        }
+    }
+
+    pub fn reset_iter(&mut self) {
+        self.iter_offset = 0x02;
+    }
+}
+
+impl Iterator for FAT {
+    type Item = u32;
+
+    /* Returns empty chains in FAT */
+    fn next(&mut self) -> Option<Self::Item> {
+        let fat: *mut u32 = self.fat_address as *mut u32;
+        while unsafe { *fat.offset(self.iter_offset as isize) } != 0x01 {
+            self.iter_offset += 1;
+        }
+
+        let r: Option<Self::Item> = Some(self.iter_offset);
+        self.iter_offset += 1;
+        return r;
+    }
+}
+
 pub struct FAT32<'a> {
     ide_processor: &'a mut IDE,
-    fat_address: u64,
+    fat_processor: FAT,
 
     partition_start_lba: u32,
     reserved_sectors: u16,
     sectors_per_cluster: u8,
-    fat_num: u8,
     root_dir_num: u16,
     total_sectors: u32,
     bytes_per_sector: u16,
     root_dir_cluster: u32,
-    sectors_per_fat: u32,
 }
 
 impl<'a> FAT32<'a> {
@@ -270,35 +311,35 @@ impl<'a> FAT32<'a> {
 
         Ok(Self {
             ide_processor: ide_processor,
-            fat_address: 0x42000000,
-
+            fat_processor: FAT::new(
+                0x42000000,
+                extended_boot_record.sectors_per_fat,
+                bootsector.num_fats,
+            ),
             partition_start_lba: bootsector.num_hidden_sectors,
             reserved_sectors: bootsector.reserved_sectors,
             sectors_per_cluster: bootsector.sectors_per_cluster,
-            fat_num: bootsector.num_fats,
             root_dir_num: bootsector.num_root_dir_entries,
             total_sectors: total_sectors,
             bytes_per_sector: bootsector.bytes_per_sector,
             root_dir_cluster: extended_boot_record.cluster_num_root_dir,
-            sectors_per_fat: extended_boot_record.sectors_per_fat,
         })
     }
 
-    pub fn read_file(&mut self, path: &str, to: &mut [u8], n: usize) -> Result<u8, &'static str> {
-        let entryo: Option<DirectoryEntry> = self.traverse(path)?;
-        if entryo.is_none() {
+    pub fn read_file(&mut self, path: &str, to: &mut [u8], n: usize) -> Result<(), &'static str> {
+        let packed: Option<(DirectoryEntry, u32, u64)> = self.traverse(path)?;
+        if packed.is_none() {
             return Err("File was not found!");
         }
 
-        let entry: DirectoryEntry = entryo.unwrap();
+        let unpacked: (DirectoryEntry, u32, u64) = packed.unwrap();
+        let entry: DirectoryEntry = unpacked.0;
         if entry.short.file_attribute == 0x10 {
             return Err("File is a directory!");
         }
 
-        const LOAD_ADDR: u64 = 0x43000000;
-
         /* main FAT where we are searching clusters */
-        let fat: *const u32 = self.fat_address as *const u32;
+        let fat: *const u32 = self.fat_processor.fat_address as *const u32;
         let mut current_chain: u32 = entry.chain();
         let mut current_read: u32 = 0x00;
 
@@ -314,9 +355,10 @@ impl<'a> FAT32<'a> {
                 LOAD_ADDR,
             );
 
+            let offset_in_mem: u64 = entry.short.file_size as u64 - remaining as u64;
             if remaining < clb {
                 kmemcpy(
-                    unsafe { LOAD_ADDR as *const u8 },
+                    unsafe { (LOAD_ADDR + offset_in_mem) as *const u8 },
                     unsafe { to.as_mut_ptr() },
                     remaining,
                 );
@@ -325,25 +367,91 @@ impl<'a> FAT32<'a> {
 
             /* Copy one cluster */
             kmemcpy(
-                unsafe { LOAD_ADDR as *const u8 },
+                unsafe { (LOAD_ADDR + offset_in_mem) as *const u8 },
                 unsafe { to.as_mut_ptr() },
                 clb,
             );
             remaining -= clb;
             current_chain = unsafe { *fat.offset(current_chain as isize) } & 0x0FFFFFFF;
         }
-        Ok(0)
+        Ok(())
     }
 
-    pub fn search_in_dir(
+    /// Deletes a file on given path. Returns error if operation was not performed 
+    pub fn delete_file(&mut self, path: &str) -> Result<(), &'static str> {
+        let packed: Option<(DirectoryEntry, u32, u64)> = self.traverse(path)?;
+        if packed.is_none() {
+            return Err("File was not found!");
+        }
+
+        let unpacked: (DirectoryEntry, u32, u64) = packed.unwrap();
+        let entry: DirectoryEntry = unpacked.0;
+        if entry.short.file_attribute == 0x10 {
+            return Err("File is a directory!");
+        }
+
+        Ok(self.delete_object(&unpacked.0, unpacked.1, unpacked.2)?)
+    }
+
+    /// Deletes a directory on given path. Returns error if operation was not performed 
+    pub fn delete_directory(&mut self, path: &str) -> Result<(), &'static str> {
+        let packed: Option<(DirectoryEntry, u32, u64)> = self.traverse(path)?;
+        if packed.is_none() {
+            return Err("Directory was not found!");
+        }
+
+        let unpacked: (DirectoryEntry, u32, u64) = packed.unwrap();
+        let entry: DirectoryEntry = unpacked.0;
+        if entry.short.file_attribute != 0x10 {
+            return Err("File is a file!");
+        }
+
+        Ok(self.delete_object(&unpacked.0, unpacked.1, unpacked.2)?)
+    }
+
+    /// Deletes an object with given directory entry `entry`, on cluster # `cluster` and
+    /// with an offset inside of the given cluster #, of `offset`
+    fn delete_object(
+        &mut self,
+        entry: &DirectoryEntry,
+        cluster: u32,
+        offset: u64,
+    ) -> Result<(), &'static str> {
+        /* The LBA address of the sector where the given directory entry is found */
+        let lba: u64 = self.cluster_lba(cluster as usize) + offset / self.bytes_per_sector as u64;
+        let offset_in_sector: u64 = offset % self.bytes_per_sector as u64;
+
+        /* Read that sector, modify the entry and write back to disk... */
+        self.ide_processor
+            .ata_access_pio(ATADirection::Read, 0x00, lba, 1, LOAD_ADDR);
+
+        unsafe {
+            /* Mark directory entry as unused by setting the first byte to 0xE5 */
+            let addr: *mut u8 = LOAD_ADDR as *mut u8;
+            *addr.offset(offset_in_sector as isize) = 0xE5;
+        }
+
+        /* Write the modified directory entry back to disk */
+        self.ide_processor
+            .ata_access_pio(ATADirection::Write, 0x00, lba, 1, LOAD_ADDR);
+
+        /* Clean the cluster chain in FAT, that is associated with the given object */
+        self.deallocate_chain(entry.chain());
+
+        /* Write the FATs to the disk */
+        self.sync_fat();
+        Ok(())
+    }
+
+    /// Search of an object (directory or file) with name `name` in the directory chain
+    /// with chain #, `chain` 
+    fn search_in_dir(
         &mut self,
         chain: u32,
         name: &str,
-    ) -> Result<Option<DirectoryEntry>, &'static str> {
-        const LOAD_ADDR: u64 = 0x43000000;
-
+    ) -> Result<Option<(DirectoryEntry, u32, u64)>, &'static str> {
         /* main FAT where we are searching clusters */
-        let fat: *const u32 = self.fat_address as *const u32;
+        let fat: *const u32 = self.fat_processor.fat_address as *const u32;
         let mut current_chain: u32 = chain;
         while !FATEntry::end(current_chain) {
             self.ide_processor.ata_access_pio(
@@ -356,15 +464,16 @@ impl<'a> FAT32<'a> {
 
             let mut dir_offset: u64 = LOAD_ADDR;
             while let Some((entry, size, skip)) = DirectoryEntry::fetch(dir_offset) {
-                dir_offset += size as u64;
                 /* Deleted entry or long name entry - move on */
                 if skip || entry.short.file_attribute == 0x0F {
+                    dir_offset += size as u64;
                     continue;
                 }
 
                 if entry.compare_filename(name)? {
-                    return Ok(Some(entry));
+                    return Ok(Some((entry, current_chain, dir_offset - LOAD_ADDR)));
                 }
+                dir_offset += size as u64;
             }
 
             current_chain = unsafe { *fat.offset(current_chain as isize) } & 0x0FFFFFFF;
@@ -372,19 +481,24 @@ impl<'a> FAT32<'a> {
         Ok(None)
     }
 
-    pub fn traverse(&mut self, path: &str) -> Result<Option<DirectoryEntry>, &'static str> {
-        let mut found_entry: Option<DirectoryEntry> = None;
+    /// Traverses the path and returns the parsed directory entry together with the
+    /// cluster number and offset in the cluster, if the object was found in path
+    pub fn traverse(
+        &mut self,
+        path: &str,
+    ) -> Result<Option<(DirectoryEntry, u32, u64)>, &'static str> {
+        let mut found_entry: Option<(DirectoryEntry, u32, u64)> = None;
 
         let mut current_chain: u32 = 0x02;
         for part in path.split('/') {
             /* If a directory entry was found, unpack it and search through it */
             if let Some(entry) = found_entry {
-                if entry.short.file_attribute != 0x10 {
+                if entry.0.short.file_attribute != 0x10 {
                     return Err("Trying to search through a file!");
                 }
 
                 /* Assemble the cluster number where the directory is placed */
-                current_chain = entry.chain();
+                current_chain = entry.0.chain();
             }
 
             found_entry = self.search_in_dir(current_chain, part)?;
@@ -399,8 +513,68 @@ impl<'a> FAT32<'a> {
     pub fn cluster_lba(&self, cluster: usize) -> u64 {
         self.partition_start_lba as u64
             + self.reserved_sectors as u64
-            + (self.fat_num as u64) * (self.sectors_per_fat as u64)
+            + (self.fat_processor.fat_num as u64) * (self.fat_processor.sectors_per_fat as u64)
             + (cluster as u64 - 2) * (self.sectors_per_cluster as u64)
+    }
+
+    /// Writes the FAT tables in memory to all FATS on the disk
+    fn sync_fat(&mut self) {
+        /* Write back all FATS */
+        for i in 0..self.fat_processor.fat_num {
+            self.ide_processor.ata_access_pio(
+                ATADirection::Write,
+                0x00,
+                self.partition_start_lba as u64
+                    + self.reserved_sectors as u64
+                    + (self.fat_processor.sectors_per_fat * i as u32) as u64,
+                self.fat_processor.sectors_per_fat as u8,
+                self.fat_processor.fat_address,
+            )
+        }
+    }
+
+    /// Creates a cluster chain by searching unused fat entries on FAT
+    fn allocate_chain(&mut self, length: usize) -> u32 {
+        self.fat_processor.reset_iter();
+
+        /* main FAT where we are searching clusters */
+        let fat: *mut u32 = self.fat_processor.fat_address as *mut u32;
+
+        /* Find a new empty entry */
+        let mut start: u32 = self.fat_processor.next().unwrap();
+
+        let mut previous: u32 = start;
+        for i in 1..length {
+            let current: u32 = self.fat_processor.next().unwrap();
+            unsafe {
+                *fat.offset(previous as isize) = current;
+            }
+
+            previous = current;
+        }
+
+        /* Mark last chain as last */
+        unsafe {
+            *fat.offset(previous as isize) = 0xFFFFFFFF;
+        }
+        return start;
+    }
+
+    /// Marks the whole cluster chain as unused. `start` is the beginning of the cluster
+    fn deallocate_chain(&self, start: u32) {
+        /* main FAT where we are searching clusters */
+        let fat: *mut u32 = self.fat_processor.fat_address as *mut u32;
+
+        let mut current_chain: u32 = start;
+        while !FATEntry::end(current_chain) {
+            unsafe {
+                let new: u32 = *fat.offset(current_chain as isize);
+                /* Mark as empty */
+                *fat.offset(current_chain as isize) = 0x00000000;
+
+                current_chain = new;
+            }
+        }
     }
 }
 
