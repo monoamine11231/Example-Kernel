@@ -288,7 +288,7 @@ impl<'b, 'a> FATChainFollower<'b, 'a> {
     }
 }
 
-impl<'a, 'b> Iterator for FATChainFollower<'a, 'b> {
+impl<'b, 'a> Iterator for FATChainFollower<'b, 'a> {
     type Item = u32;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -441,6 +441,7 @@ impl<'a> FAT32<'a> {
 
         for ncluster in FATChainFollower::new(entry.get_chain(), self) {
             let offset_in_mem: u64 = entry.short.file_size as u64 - remaining as u64;
+            /* Copy to buffer */
             if remaining < clb {
                 kmemcpy(
                     unsafe { (LOAD_ADDR + offset_in_mem) as *const u8 },
@@ -458,6 +459,123 @@ impl<'a> FAT32<'a> {
             );
             remaining -= clb;
         }
+        Ok(())
+    }
+
+    pub fn write_file(&mut self, path: &str, from: &[u8], n: usize) -> Result<(), &'static str> {
+        let packed: Option<(DirectoryEntry, u32, u64)> = self.traverse(path)?;
+        if packed.is_none() {
+            return Err("File was not found!");
+        }
+
+        let unpacked: (DirectoryEntry, u32, u64) = packed.unwrap();
+        let entry: DirectoryEntry = unpacked.0;
+        if entry.short.file_attribute == 0x10 {
+            return Err("File is a directory!");
+        }
+
+        let fat: *mut u32 = self.fat_processor.fat_address as *mut u32;
+        let mut last_chain: u32 = unpacked.0.get_chain();
+
+        /* Get last cluster chain number */
+        loop {
+            if FATEntry::end(unsafe { *fat.offset(last_chain as isize) }) {
+                break;
+            }
+            last_chain = unsafe { *fat.offset(last_chain as isize) };
+        }
+
+        /* Calculate and allocate the number of extra clusters needed */
+        let clb: usize = self.sectors_per_cluster as usize * self.bytes_per_sector as usize;
+        let clusters2alloc: usize = ((unpacked.0.short.file_size as usize % clb) + n) / clb;
+
+        /* Append the allocated clusters to the last FAT entry of the file */
+        if clusters2alloc > 0 {
+            unsafe {
+                *fat.offset(last_chain as isize) = self.allocate_chain(clusters2alloc);
+            }
+        }
+
+        /* Load the last cluster and place the first chunk of data even with the cluster */
+        self.ide_processor.ata_access_pio(
+            ATADirection::Read,
+            0x00,
+            self.cluster_lba(last_chain),
+            self.sectors_per_cluster as u8,
+            LOAD_ADDR,
+        );
+
+        let first_cluster_offset: usize = unpacked.0.short.file_size as usize % clb;
+        let first_write_num: usize = core::cmp::min(clb - first_cluster_offset, n);
+        kmemcpy(
+            from.as_ptr(),
+            (LOAD_ADDR + first_cluster_offset as u64) as *mut u8,
+            first_write_num,
+        );
+
+        /* Write back the modified cluster */
+        self.ide_processor.ata_access_pio(
+            ATADirection::Write,
+            0x00,
+            self.cluster_lba(last_chain),
+            self.sectors_per_cluster as u8,
+            LOAD_ADDR,
+        );
+
+        /* Don't forget to overwrite while writing to clusters */
+        last_chain = unsafe { *fat.offset(last_chain as isize) };
+        let mut remaining: usize = n - first_write_num;
+        while remaining > 0 {
+            if remaining < clb {
+                /* Write the remaining part to disk */
+                kmemcpy(from.as_ptr(), LOAD_ADDR as *mut u8, remaining);
+                self.ide_processor.ata_access_pio(
+                    ATADirection::Write,
+                    0x00,
+                    self.cluster_lba(last_chain),
+                    ((remaining + self.bytes_per_sector as usize - 1)
+                        / (self.bytes_per_sector as usize)) as u8,
+                    LOAD_ADDR,
+                );
+                break;
+            }
+
+            /* Write a whole cluster to disk */
+            kmemcpy(from.as_ptr(), LOAD_ADDR as *mut u8, clb);
+            self.ide_processor.ata_access_pio(
+                ATADirection::Write,
+                0x00,
+                self.cluster_lba(last_chain),
+                self.sectors_per_cluster,
+                LOAD_ADDR,
+            );
+
+            last_chain = unsafe { *fat.offset(last_chain as isize) };
+            remaining -= clb;
+        }
+
+        /* Read the target directory entry from the disk */
+        self.ide_processor.ata_access_pio(
+            ATADirection::Read,
+            0x00,
+            self.cluster_lba(unpacked.1) + unpacked.2 / self.bytes_per_sector as u64,
+            1,
+            LOAD_ADDR,
+        );
+        /* Append the size */
+        let offset: u64 = unpacked.2 % self.bytes_per_sector as u64;
+        let entry: &mut ShortDirectoryEntry = unsafe { &mut *((LOAD_ADDR + offset) as *mut _) };
+        entry.file_size += n as u32;
+
+        /* Write the entry back to disk */
+        self.ide_processor.ata_access_pio(
+            ATADirection::Write,
+            0x00,
+            self.cluster_lba(unpacked.1) + unpacked.2 / self.bytes_per_sector as u64,
+            1,
+            LOAD_ADDR,
+        );
+
         Ok(())
     }
 
@@ -533,6 +651,7 @@ impl<'a> FAT32<'a> {
             dotdot.file_size = 0x00;
         }
 
+        /* Write back cluster to disk */
         self.ide_processor.ata_access_pio(
             ATADirection::Write,
             0x00,
@@ -612,7 +731,7 @@ impl<'a> FAT32<'a> {
 
         let mut ok: bool = false;
         let mut cluster_target: u32 = 0x00;
-        let mut dir_offset: u64 = LOAD_ADDR;
+        let mut dir_offset: u64 = 0x00;
         /* Loop through each cluster dedicated to the directory and look after
          * available entries */
         'cluster_loop: for ncluster in FATChainFollower::new(cluster, self) {
@@ -623,7 +742,7 @@ impl<'a> FAT32<'a> {
                     /* Since we cannot mut borrow multiple times */
                     ok = true;
                     cluster_target = ncluster;
-                    dir_offset = LOAD_ADDR + offset;
+                    dir_offset = offset;
                     break 'cluster_loop;
                 }
             }
@@ -638,8 +757,7 @@ impl<'a> FAT32<'a> {
         let (hichain, lochain) = DirectoryEntry::divide_chain(allocated_chain);
 
         /* Change the found and available directory entry */
-        let entry: &mut ShortDirectoryEntry =
-            unsafe { &mut *(dir_offset as *mut ShortDirectoryEntry) };
+        let entry: &mut ShortDirectoryEntry = unsafe { &mut *((LOAD_ADDR + dir_offset) as *mut _) };
         entry.file_name = name;
         entry.file_ext = ext;
         entry.file_attribute = file_attibute;
@@ -658,9 +776,9 @@ impl<'a> FAT32<'a> {
         self.ide_processor.ata_access_pio(
             ATADirection::Write,
             0x00,
-            self.cluster_lba(cluster_target),
-            self.sectors_per_cluster as u8,
-            LOAD_ADDR,
+            self.cluster_lba(cluster_target) + dir_offset / self.bytes_per_sector as u64,
+            1,
+            LOAD_ADDR + (dir_offset / self.bytes_per_sector as u64) * self.bytes_per_sector as u64,
         );
 
         /* Write FAT tables from memory to disk */
@@ -678,8 +796,8 @@ impl<'a> FAT32<'a> {
         offset: u64,
     ) -> Result<(), &'static str> {
         /* The LBA address of the sector where the given directory entry is found */
-        let lba: u64 = self.cluster_lba(cluster) + offset / self.bytes_per_sector as u64;
-        let offset_in_sector: u64 = offset % self.bytes_per_sector as u64;
+        let offset_in_sectors: u64 = offset / self.bytes_per_sector as u64;
+        let lba: u64 = self.cluster_lba(cluster) + offset_in_sectors;
 
         /* Read that sector, modify the entry and write back to disk... */
         self.ide_processor
@@ -688,12 +806,17 @@ impl<'a> FAT32<'a> {
         unsafe {
             /* Mark directory entry as unused by setting the first byte to 0xE5 */
             let addr: *mut u8 = LOAD_ADDR as *mut u8;
-            *addr.offset(offset_in_sector as isize) = 0xE5;
+            *addr.offset((offset % self.bytes_per_sector as u64) as isize) = 0xE5;
         }
 
         /* Write the modified directory entry back to disk */
-        self.ide_processor
-            .ata_access_pio(ATADirection::Write, 0x00, lba, 1, LOAD_ADDR);
+        self.ide_processor.ata_access_pio(
+            ATADirection::Write,
+            0x00,
+            lba,
+            1,
+            LOAD_ADDR,
+        );
 
         /* Clean the cluster chain in FAT, that is associated with the given object */
         self.deallocate_chain(entry.get_chain());

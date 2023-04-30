@@ -52,7 +52,12 @@ pub extern "C" fn _start() -> ! {
     fs_processor.create_file("UUU", "AAA.TXT").unwrap();
     fs_processor.create_file("UUU/OOO", "CD.TXT").unwrap();
     fs_processor.create_file("KEK", "B0.TXT").unwrap();
+    let str1: &str = "append from fs wow!";
+    fs_processor.write_file("KEK/A.TXT", str1.as_bytes(), str1.len());
+    let str2: &str = " [please hope this appends]";
+    fs_processor.write_file("LOL.TXT", str2.as_bytes(), str2.len());
 
+    /* From reading a file */
     qemu_println(unsafe { core::str::from_utf8_unchecked(&buf) });
 
     //qemu_print_hex(a);
