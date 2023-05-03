@@ -1,5 +1,6 @@
 use crate::graph::utils::*;
-use crate::utils::qemu_io::*;
+use crate::tooling::qemu_io::*;
+use crate::tooling::serial::{outb, outw};
 use core::arch::asm;
 
 #[derive(PartialEq, Eq, Clone, Copy)]
@@ -17,67 +18,26 @@ impl Planar {
     }
 
     pub fn indicate_planar_switch() {
-        unsafe {
-            asm!(
-                "
-                mov dx, 0x3ce
-                mov ax, 0x5
-                out dx, ax
-            ",
-                clobber_abi("efiapi")
-            );
-        }
+        //outb or outw?
+        outb(0x3ce, 0x5);
     }
     fn plane_0() {
-        unsafe {
-            asm!(
-                "
-                mov dx, 0x3c4
-                mov ax, 0x102
-                out dx, ax
-            ",
-                clobber_abi("efiapi")
-            );
-        }
+        outw(0xc4, 0x102);
     }
     fn plane_1() {
-        unsafe {
-            asm!(
-                "
-                mov dx, 0x3c4
-                mov ax, 0x202
-                out dx, ax
-            "
-            );
-        }
+        outw(0x3c4, 0x202);
     }
     fn plane_2() {
-        unsafe {
-            asm!(
-                "
-                mov dx, 0x3c4
-                mov ax, 0x402
-                out dx, ax
-            "
-            );
-        }
+        outw(0x3c4, 0x402);
     }
     fn plane_3() {
-        unsafe {
-            asm!(
-                "
-                mov dx, 0x3c4
-                mov ax, 0x802
-                out dx, ax
-            "
-            );
-        }
+        outw(0x3c4, 0x802);
     }
 
     pub fn switch(&mut self, new_planar: usize) {
-        qemu_print_str("Switching to plane: ");
-        qemu_print_num(new_planar as u64);
-        qemu_print_nln();
+        //qemu_print("Switching to plane: ");
+        //qemu_print_num(new_planar as u64);
+        //qemu_print("\n");
         //Error if not 0 <= new_planar <= 4
         if (new_planar > 3) {
             graphics_error();
@@ -94,16 +54,7 @@ impl Planar {
     }
 
     pub fn restore(&mut self) {
-        unsafe {
-            asm!(
-                "
-                    mov dx, 0x3c4
-                    mov ax, 0xf02
-                    out dx, ax
-                ",
-                clobber_abi("efiapi")
-            );
-        }
+        outw(0x3c4, 0xf02);
     }
 
     pub fn next(&mut self) {

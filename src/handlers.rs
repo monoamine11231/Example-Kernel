@@ -2,11 +2,7 @@ use crate::tooling::{self, vga::write_str_at};
 use crate::utils::qemu_io::*;
 use core::panic::PanicInfo;
 
-use crate::tooling::{
-    self,
-    qemu_io::{qemu_print_hex, qemu_println},
-    vga::write_str_at,
-};
+use crate::tooling::qemu_io::{qemu_print_hex, qemu_println};
 
 pub extern "x86-interrupt" fn page_fault(isf: InterruptStackFrame) {
     write_str_at("err: page fault", 4, 0, 0xde)

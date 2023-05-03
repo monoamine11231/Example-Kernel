@@ -10,6 +10,7 @@
 extern crate lazy_static;
 
 mod acpi;
+mod apic;
 mod bord;
 mod drivers;
 mod graph;
@@ -25,16 +26,20 @@ use acpi::*;
 use apic::MADTX;
 use bord::*;
 use drivers::pci::pci_device_search_by_class_subclass;
+use graph::surface::Surface;
+use graph::utils::{ColorCode, CustomColor};
 use heapless::String;
+use math::vec2::Vec2;
 use mem::memory::{self, *};
-use tooling::qemu_io::{qemu_print_hex, qemu_println};
+use tooling::qemu_io::{
+    qemu_fmt_println, qemu_print, qemu_print_hex, qemu_print_num, qemu_println,
+};
 use tooling::vga::write_str_at;
-use utils::qemu_io::{qemu_print_nln, qemu_println};
 
 use crate::graph::graphics;
 use crate::graph::planar_writer;
+use crate::graph::surface;
 use crate::math::vec2;
-use crate::utils::qemu_io::qemu_print_num;
 
 #[no_mangle]
 #[link_section = ".start"]
@@ -46,7 +51,11 @@ pub extern "C" fn _start() -> ! {
     //test_graphics_mode_105_vesa();
     //test_graphics_mode_12();
 
+    let my_root = math::utils::sqrt(5.0);
+    qemu_fmt_println("{}", format_args!("{}", my_root));
     test_graphics_lib();
+    //test_graphics_mode_12();
+
     output_rsp();
     //test_graphics_mode_12();
     /*
@@ -57,14 +66,13 @@ pub extern "C" fn _start() -> ! {
         )
     }
     */
-    memory::init();
-    apic::init();
-    let (a, b, c) = pci_device_search_by_class_subclass(0x01, 0x01);
+    //memory::init();
+    //apic::init();
+    //let (a, b, c) = pci_device_search_by_class_subclass(0x01, 0x01);
     //qemu_print_hex(RSDTX.0.length);
-    qemu_print_hex(a as u32);
-    qemu_print_hex(b as u32);
-    qemu_print_hex(c as u32);
-    write_str_at("Hello World!", 0, 0, 0xb);
+    //qemu_print_hex(a as u32);
+    //qemu_print_hex(b as u32);
+    //qemu_print_hex(c as u32);
 
     // unsafe {
     //     asm!(
@@ -90,18 +98,41 @@ pub fn get_rsp() -> *mut u64 {
 pub fn output_rsp() {
     let rsp = get_rsp();
     qemu_print_num(rsp as u64);
-    qemu_print_nln();
+    qemu_print("\n");
+}
+
+pub fn wait(t: u64) {
+    let mut i = 0;
+    let mut counter = 0;
+    while (i < t) {
+        counter += 1;
+        if (i % 2 == 0) {
+            i += 1;
+        } else {
+            i += 2;
+        }
+    }
 }
 
 pub fn test_graphics_lib() {
     qemu_println("Test!");
     let mut writer = planar_writer::VGA_planar_writer::new();
 
-    writer.write_circle((400, 200), 100, graph::utils::ColorCode::Cyan);
-    writer.write_rect((240, 320), 150, 100, graph::utils::ColorCode::BrightRed);
+    //writer.write_pixel_2(0, 0, ColorCode::Blue);
 
-    writer.print_plane(1);
-    writer.present();
+    let mut counter = 0;
+    loop {
+        if (counter % 2 == 0) {
+            writer.fill_screen(ColorCode::Blue);
+        } else {
+            writer.fill_screen(ColorCode::Green);
+        }
+        counter += 1;
+        wait(10000000);
+    }
+
+    //writer.color_test();
+    //writer.print_plane(1);
 }
 
 pub fn test_graphics_mode_12() {

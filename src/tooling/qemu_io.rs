@@ -1,3 +1,4 @@
+use core::arch::asm;
 use core::fmt::Arguments;
 use core::fmt::Write;
 
@@ -20,6 +21,32 @@ pub fn qemu_print_hex(value: u32) {
         i += 1;
     }
     qemu_print("\n");
+}
+
+pub fn qemu_print_num(mut n: u64) {
+    if (n == 0) {
+        qemu_print("0");
+        return;
+    }
+
+    const BUFFER_SIZE: usize = 100;
+    static mut BUFFER: [u8; BUFFER_SIZE + 1] = [0; BUFFER_SIZE + 1];
+    let mut counter = 0;
+
+    while (n > 0) {
+        let digit = (n % 10) as u8;
+        n /= 10;
+        unsafe {
+            BUFFER[BUFFER_SIZE - counter - 1] = b'0' + digit;
+        }
+        counter += 1;
+    }
+
+    let start = BUFFER_SIZE - counter;
+    unsafe {
+        BUFFER[BUFFER_SIZE] = 0;
+        qemu_print(core::str::from_utf8_unchecked(&BUFFER[start..BUFFER_SIZE]));
+    }
 }
 
 /// Prints a string without newline to QEMU serial stdout
