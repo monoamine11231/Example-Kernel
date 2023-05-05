@@ -80,7 +80,22 @@ pub struct IDT {
     pub virtualization: IDTEntry,
     pub security_exception: IDTEntry,
     pub more_reserved: [IDTEntry; 10],
-    pub interrupts: [IDTEntry; 16],
+    pub interrupt1: IDTEntry,
+    pub interrupt2: IDTEntry,
+    pub interrupt3: IDTEntry,
+    pub interrupt4: IDTEntry,
+    pub interrupt5: IDTEntry,
+    pub interrupt6: IDTEntry,
+    pub interrupt7: IDTEntry,
+    pub interrupt8: IDTEntry,
+    pub interrupt9: IDTEntry,
+    pub interrupt10: IDTEntry,
+    pub interrupt11: IDTEntry,
+    pub interrupt12: IDTEntry,
+    pub interrupt13: IDTEntry,
+    pub interrupt14: IDTEntry,
+    pub interrupt15: IDTEntry,
+    pub interrupt16: IDTEntry,
 }
 
 type HandlerFunc = extern "x86-interrupt" fn(isf: InterruptStackFrame);

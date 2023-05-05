@@ -27,7 +27,7 @@ use mem::memory::{self, *};
 use tooling::qemu_io::{qemu_print_hex, qemu_println};
 use tooling::vga::write_str_at;
 
-use crate::handlers::pic_intr_handler;
+use crate::handlers::*;
 
 #[no_mangle]
 #[link_section = ".start"]
@@ -101,7 +101,22 @@ lazy_static! {
         simd_floating_point: IDTEntry::new(handlers::simd_floating_point, Ring::Zero),
         virtualization: IDTEntry::new(handlers::virtualization, Ring::Zero),
         security_exception: IDTEntry::new(handlers::security_exception, Ring::Zero),
-        interrupts: [IDTEntry::new(pic_intr_handler, Ring::Zero); 16],
+        interrupt1: IDTEntry::new(handler1_wtf, Ring::Zero),
+        interrupt2: IDTEntry::new(keyboard_handler, Ring::Zero),
+        interrupt3: IDTEntry::new(mh3, Ring::Zero),
+        interrupt4: IDTEntry::new(mh4, Ring::Zero),
+        interrupt5: IDTEntry::new(mh5, Ring::Zero),
+        interrupt6: IDTEntry::new(mh6, Ring::Zero),
+        interrupt7: IDTEntry::new(mh7, Ring::Zero),
+        interrupt8: IDTEntry::new(mh8, Ring::Zero),
+        interrupt9: IDTEntry::new(mh9, Ring::Zero),
+        interrupt10: IDTEntry::new(mh10, Ring::Zero),
+        interrupt11: IDTEntry::new(mh11, Ring::Zero),
+        interrupt12: IDTEntry::new(mh12, Ring::Zero),
+        interrupt13: IDTEntry::new(mh13, Ring::Zero),
+        interrupt14: IDTEntry::new(mh14, Ring::Zero),
+        interrupt15: IDTEntry::new(mh15, Ring::Zero),
+        interrupt16: IDTEntry::new(mh16, Ring::Zero),
         ..Default::default()
     };
 }

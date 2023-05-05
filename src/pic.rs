@@ -1,6 +1,6 @@
 use core::arch::asm;
 
-use crate::tooling::serial::{inl_inb, inl_outb};
+use crate::tooling::serial::{inb, outb};
 
 const PIC1_CMD: u16 = 0x20;
 const PIC1_DATA: u16 = 0x21;
@@ -33,27 +33,27 @@ pub fn init() {
 
 // theft from https://wiki.osdev.org/PIC
 fn pic_remap(offset1: u8, offset2: u8) {
-    let a = inl_inb(PIC1_DATA);
-    let b = inl_inb(PIC2_DATA);
+    let a = inb(PIC1_DATA);
+    let b = inb(PIC2_DATA);
 
-    inl_outb(PIC1_CMD, ICW1_INIT | ICW1_ICW4);
-    inl_outb(PIC2_CMD, ICW1_INIT | ICW1_ICW4);
+    outb(PIC1_CMD, ICW1_INIT | ICW1_ICW4);
+    outb(PIC2_CMD, ICW1_INIT | ICW1_ICW4);
 
-    inl_outb(PIC1_DATA, offset1);
-    inl_outb(PIC2_DATA, offset2);
+    outb(PIC1_DATA, offset1);
+    outb(PIC2_DATA, offset2);
 
-    inl_outb(PIC1_DATA, 4);
-    inl_outb(PIC2_DATA, 2);
+    outb(PIC1_DATA, 4);
+    outb(PIC2_DATA, 2);
 
-    inl_outb(PIC1_DATA, ICW4_8086);
-    inl_outb(PIC2_DATA, ICW4_8086);
+    outb(PIC1_DATA, ICW4_8086);
+    outb(PIC2_DATA, ICW4_8086);
 
-    inl_outb(PIC1_DATA, a);
-    inl_outb(PIC2_DATA, b);
+    outb(PIC1_DATA, a);
+    outb(PIC2_DATA, b);
 }
 
 fn pic_get_irq_reg(ocw3: u8) -> u16 {
-    inl_outb(PIC1_CMD, ocw3);
-    inl_outb(PIC2_CMD, ocw3);
-    return ((inl_inb(PIC1_DATA) as u16) << 8) | (inl_inb(PIC2_DATA) as u16);
+    outb(PIC1_CMD, ocw3);
+    outb(PIC2_CMD, ocw3);
+    return ((inb(PIC1_DATA) as u16) << 8) | (inb(PIC2_DATA) as u16);
 }
