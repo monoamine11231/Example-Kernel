@@ -34,7 +34,7 @@ use crate::handlers::pic_intr_handler;
 pub extern "C" fn _start() -> ! {
     load_idt(&IDTX);
     memory::init();
-    //pic::init();
+    pic::init();
 
     let buf: [u8; 10] = [0x10u8; 10];
 
