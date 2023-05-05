@@ -149,7 +149,8 @@ impl AddrSpace {
             let mut k = 0;
             while k < 512 {
                 // + paging_offset + 0xFFFFFFFFFF
-                new_pt.entries[k] = 3 + ((((i << 21) + (j << 12) + k * 0x1000) as u64) as u64); // 3 = page_rw | page_present
+                // 0b1011 -- cache disable bit, rw bit, present bit
+                new_pt.entries[k] = 16 + 3 + ((((i << 21) + (j << 12) + k * 0x1000) as u64) as u64); // 3 = page_rw | page_present
 
                 k += 1;
             }
