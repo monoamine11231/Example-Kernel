@@ -1,3 +1,6 @@
+// TODO: Move the stack
+
+use crate::mem::alloc;
 use crate::tooling::qemu_io::qemu_fmt_println;
 use crate::tooling::qemu_io::qemu_println;
 use core::arch::asm;
@@ -31,9 +34,11 @@ pub unsafe fn get_cr4() -> u64 {
     assert!(reg_val != 0xf00dbabe);
     reg_val
 }
+
 pub struct AddrSpace {
     pub phys_base: u64,
     pub pml4: u64,
+    // FIXME: pub stack: *mut u64
 }
 
 pub fn init() -> AddrSpace {
@@ -56,54 +61,17 @@ pub fn init() -> AddrSpace {
         //let taddr = ((1 as u64) << (30)) + (511 * 512 * 0x1000) as u64;
         //let trace = aspace.translate_trace(taddr);
 
+        assert!(
+            *(0x71000 as *mut u64) == *((0x71000 + 0x40000000) as *mut u64)
+                && *(0x71000 as *mut u64) != 0
+        );
+        alloc::init_alloc();
         aspace
     }
 }
 
 // chungus code will be refactored. It looks like this because I had to root out a bug
 impl AddrSpace {
-    // four level page translation. Call a closure f at each level of translation
-    unsafe fn translate_and_process(&self, addr: u64, f: unsafe fn(&mut PT, u64)) -> u64 {
-        // This will technically not be PTE during initialization, but this is fine
-        let mut curr_pte: &PTE = &*((self.phys_base + self.pml4 + addr & (512 << 39)) as *mut PTE);
-
-        let mut i = 3;
-
-        loop {
-            // do things with the table before advancing to the next level
-            let mut curr_table = &mut *((ptr::addr_of!(curr_pte) as u64 & 0x1000) as *mut PT);
-            f(curr_table, i);
-
-            // I will fix this
-            if i == 0 {
-                break;
-            }
-            i -= 1;
-
-            // update variables to reflect having advanced to the next table
-            curr_pte = curr_pte.get_next_pte(self.phys_base, i);
-        }
-        ptr::addr_of!(curr_pte) as u64
-    }
-
-    // traverse pml4 to a given depth
-    unsafe fn translate_to_depth(&self, addr: u64, depth: u64) -> u64 {
-        // This will technically not be PTE during initialization, but this is fine
-        let mut curr_pte: &PTE = &*((self.phys_base + self.pml4 + addr & (512 << 39)) as *mut PTE);
-        let mut i = 3;
-
-        loop {
-            if (3 - i) > depth {
-                break;
-            }
-            i -= 1;
-
-            // update variables to reflect having advanced to the next table
-            curr_pte = curr_pte.get_next_pte(self.phys_base, i);
-        }
-        ptr::addr_of!(curr_pte) as u64
-    }
-
     // return the entire chain of translation
     pub unsafe fn translate_trace(&self, addr: u64) -> [*const PTE; 4] {
         // This will technically not be PTE during initialization, but this is fine
@@ -163,26 +131,16 @@ impl AddrSpace {
         );
 
         let mut new_pml4 = (relocated_pml4_addr as *mut PT);
-
         let mut paging_offset = 0x0 + 0x200 * 0x1000 + (0x1000 * 5); // phys_base must be 0. Start the paging after the first 2 MiB, we are aiming for 4 MiB so we can map 1 GiB
-                                                                     //qemu_fmt_println("\n*pdpt {:x}", format_args!("c {:#x} \n", (&mut *new_pml4).entries[1]));
-        let mut new_pdpt = PDPT; // &mut *((relocated_pml4_addr + 0x1000) as *mut PT);
-                                 // (&mut *new_pml4).entries[0] = paging_offset + 3;// 3 = page_rw | page_present
-
+        let mut new_pdpt = PDPT;
         let mut new_pdt = PT::new_at(paging_offset);
         new_pdpt.entries[1] = paging_offset + 3; // 3 = page_rw | page_present
-                                                 //*(0x71008 as *mut u64) = *(*(0x71000 as *mut u64) as *mut u64);
-                                                 //qemu_fmt_println("pdpt 0 {}", format_args!("a {:x}\n", (new_pdpt).entries[0]));
-
-        //qemu_fmt_println("", format_args!("pdpt addr of entry 1 {:#x}\n", (ptr::addr_of!(new_pdpt.entries[1]) as u64)));
-
-        //qemu_fmt_println("pdpt 1 {}", format_args!("pdpt 1 {:#x}\n", ((new_pdpt.entries[1]))));
 
         paging_offset += 0x1000;
-
         let mut i = 0;
 
         let mut j = 0;
+        // hard coded mapping
         while j < 400 {
             let mut new_pt = &mut *(paging_offset as *mut PT);
             new_pdt.entries[j] = paging_offset + 3; // 3 = page_rw | page_present
@@ -350,12 +308,6 @@ fn get_page(addr: u64) {
     // verify sign extension
     // traverse page table
 }
-
-// syscall alloc
-pub fn mmap() {}
-
-// internal malloc for the kernel
-pub fn kalloc() {}
 
 // todo : use c_void instead of u64
 // copies sz bytes, from -> to
