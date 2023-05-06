@@ -97,6 +97,8 @@ pub extern "C" fn _start() -> ! {
     //     )
     // }
 
+    waste_time(10000);
+    panicking_function();
     loop {}
 }
 

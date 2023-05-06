@@ -130,9 +130,10 @@ pub fn panic(info: &PanicInfo) -> ! {
         }
 
         if let Some(location) = info.location() {
-            qemu_print!("at {}", location); //print_location(&mut WRITER, location);
+            qemu_println!("at {}", location); //print_location(&mut WRITER, location);
         }
 
+    crate::audio::stop();
         //unsafe { stack_trace(&mut WRITER) };
     loop {}
 }

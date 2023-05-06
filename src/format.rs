@@ -49,7 +49,7 @@ macro_rules! qemu_println {
         
         let mut formatted_string = String::<{crate::FORMAT_STRING_SIZE}>::new();
         write!(&mut formatted_string, $string).unwrap();
-        formatted_string.push("\n");
+        formatted_string.push('\n');
         crate::tooling::qemu_io::qemu_print(&formatted_string);
     }};
     // a string literal w/ args
