@@ -48,7 +48,7 @@ fn note(_note: f64, octave: u8) -> u32 {
 // part of (basically all of the useful code) is inspired by the os dev article on the pc speaker
 #[repr(C, packed)]
 struct AudioPlayer {
-    bit_rate: u8,
+    bits: &'static mut [u8],
     position: usize,
     volume: u8,
 }
@@ -62,7 +62,7 @@ impl AudioPlayer {
     }
 }
 
-// this will play the sound for 
+// this will play the sound forever
 pub fn play(frequency: u32) {
     let Div = 1193180 / frequency;
     let tmp: u8;
@@ -77,15 +77,28 @@ pub fn play(frequency: u32) {
     }
 }
 
+// stop playing sound
 pub fn stop() {
     let tmp = inb(0x61) & 0xFC;
     outb(0x61, tmp);
 }
 
-pub fn beep(freq: u32, duration: usize) {
+// beep() and sweep() should not be used since they just waste cpu time
+pub fn beep(freq: u32, duration: u64) {
     play(freq);
+    crate::waste_time(duration)
     // stop();
-    qemu_println!("Played sound!");
+}
+
+pub fn sweep(start: i32, end: i32, delay: u64) {
+    let step = if start < end {1.001} else {1.0/1.001};
+    let mut i = start as f64;
+    while i < (end as f64) {
+        play(i as u32);
+        i *= step;
+        crate::waste_time(delay);
+    }
+    stop();
 }
 
 

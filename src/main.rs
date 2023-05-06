@@ -53,7 +53,7 @@ pub extern "C" fn _start() -> ! {
     test_funcs::rainbow_print("Hello world!!");
     memory::init();
     pic::init();
-    audio::beep(200, 30);
+    audio::sweep(20, 1000, 1000);
 
     let buf: [u8; 10] = [0x10u8; 10];
 
@@ -97,8 +97,6 @@ pub extern "C" fn _start() -> ! {
     //     )
     // }
 
-    waste_time(10000);
-    panicking_function();
     loop {}
 }
 
@@ -152,6 +150,11 @@ fn panicking_function() -> ! {
     loop {}
 }
 
-fn waste_time(time: u64) {
-    for i in 0..time {}
+fn waste_time(_time: u64) {
+    let mut time = 0;
+    while time < _time {
+        let waste = VGAWriter::new();
+        drop(waste);
+        time += 1;
+    }
 }
