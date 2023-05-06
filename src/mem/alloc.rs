@@ -15,7 +15,7 @@ pub struct Allocator {
 // how to singleton ?????? (with custom bootloader)
 impl Allocator {
     pub unsafe fn new() -> &'static mut Self {
-        let mut adata = ((1 << 30) + 0xFFFFF) as *mut Allocator;
+        let mut adata = ((1 << 30) + 0xFFFFF + 1) as *mut Allocator;
         (*adata).head = (adata as u64 + (size_of::<Self>() as u64)) as *mut u8;
         &mut *adata
     }
