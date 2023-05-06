@@ -20,7 +20,7 @@ impl Allocator {
         &mut *adata
     }
     pub unsafe fn get() -> &'static mut Self {
-        let mut adata = ((1 << 30) + 0xFFFFF) as *mut Allocator;
+        let mut adata = ((1 << 30) + 0xFFFFF + 1) as *mut Allocator;
         &mut *adata
     }
 }
