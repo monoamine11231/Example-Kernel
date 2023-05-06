@@ -2,17 +2,18 @@
 #![no_main]
 #![feature(panic_info_message)]
 #![feature(strict_provenance)]
+#![feature(ptr_from_ref)]
 #![feature(abi_x86_interrupt)]
 #![allow(unused, unconditional_panic)]
 
 #[macro_use]
 extern crate lazy_static;
 
-mod acpi;
-mod apic;
 mod bord;
 mod drivers;
 mod handlers;
+pub mod mem;
+mod pic;
 mod tooling;
 mod format;
 mod test_funcs;
@@ -20,12 +21,11 @@ use core::arch::asm;
 use core::fmt::Write;
 use core::str::Bytes;
 
-use acpi::*;
 use bord::*;
-use drivers::pci::{
-    pci_device_search_by_class_subclass
-};
+use drivers::ide::IDE;
+pub mod fat32;
 use heapless::String;
+use mem::memory::{self, *};
 use tooling::qemu_io::{qemu_print_hex, qemu_println};
 use tooling::vga::write_str_at;
 use core::borrow::BorrowMut;
@@ -37,6 +37,8 @@ static mut WRITER: VGAWriter = VGAWriter {
     color: 0xf,
 };
 
+use crate::handlers::*;
+
 #[no_mangle]
 #[link_section = ".start"]
 pub extern "C" fn _start() -> ! {
@@ -44,6 +46,7 @@ pub extern "C" fn _start() -> ! {
     let mut i = 0;
 
     load_idt(&IDTX);
+<<<<<<< HEAD
     apic::init();
     let (a, b, c) = pci_device_search_by_class_subclass(0x01, 0x01);
     test_funcs::rainbow_print("Hello world!!");
@@ -51,6 +54,52 @@ pub extern "C" fn _start() -> ! {
         // if i % 150_000_000 == 0 {unsafe { println!("Hello world {}", i); WRITER.color = (WRITER.color + 1) % 16;}}
         i += 10000;
     }
+=======
+    memory::init();
+    pic::init();
+
+    let buf: [u8; 10] = [0x10u8; 10];
+
+    let mut ide_processor: IDE = Default::default();
+    ide_processor.init();
+    let mut fs_processor = fat32::FAT32::new(&mut ide_processor).unwrap();
+
+    let mut buf: [u8; 64] = [0x00u8; 64];
+    fs_processor.read_file("KEK/ABA/LOL3.TXT", &mut buf, 420);
+    fs_processor.delete_directory("KEK/ABA").unwrap();
+    fs_processor.create_file("KEK", "A.TXT").unwrap();
+    fs_processor.create_directory("", "UUU").unwrap();
+    fs_processor.create_directory("UUU", "OOO").unwrap();
+    fs_processor.create_file("UUU", "B.TXT").unwrap();
+    fs_processor.create_file("UUU", "AAA.TXT").unwrap();
+    fs_processor.create_file("UUU/OOO", "CD.TXT").unwrap();
+    fs_processor.create_file("KEK", "B0.TXT").unwrap();
+    let str1: &str = "append from fs wow!";
+    fs_processor.write_file("KEK/A.TXT", str1.as_bytes(), str1.len()).unwrap();
+    let str2: &str = " [please hope this appends]";
+    fs_processor.write_file("LOL.TXT", str2.as_bytes(), str2.len()).unwrap();
+    fs_processor.create_file("UUU/OOO", "LOL.TXT").unwrap();
+    
+    fs_processor.write_file("UUU/OOO/LOL.TXT", str2.as_bytes(), str2.len()).unwrap();
+
+    
+
+    /* From reading a file */
+    qemu_println(unsafe { core::str::from_utf8_unchecked(&buf) });
+
+    //qemu_print_hex(a);
+
+    write_str_at("Hello World!", 0, 0, 0xb);
+
+    // unsafe {
+    //     asm!(
+    //         "div {0:e}",
+    //         in(reg) 0,
+    //     )
+    // }
+
+    loop {}
+>>>>>>> origin
 }
 
 lazy_static! {
@@ -75,6 +124,22 @@ lazy_static! {
         simd_floating_point: IDTEntry::new(handlers::simd_floating_point, Ring::Zero),
         virtualization: IDTEntry::new(handlers::virtualization, Ring::Zero),
         security_exception: IDTEntry::new(handlers::security_exception, Ring::Zero),
+        interrupt1: IDTEntry::new(handler1_wtf, Ring::Zero),
+        interrupt2: IDTEntry::new(keyboard_handler, Ring::Zero),
+        interrupt3: IDTEntry::new(mh3, Ring::Zero),
+        interrupt4: IDTEntry::new(mh4, Ring::Zero),
+        interrupt5: IDTEntry::new(mh5, Ring::Zero),
+        interrupt6: IDTEntry::new(mh6, Ring::Zero),
+        interrupt7: IDTEntry::new(mh7, Ring::Zero),
+        interrupt8: IDTEntry::new(mh8, Ring::Zero),
+        interrupt9: IDTEntry::new(mh9, Ring::Zero),
+        interrupt10: IDTEntry::new(mh10, Ring::Zero),
+        interrupt11: IDTEntry::new(mh11, Ring::Zero),
+        interrupt12: IDTEntry::new(mh12, Ring::Zero),
+        interrupt13: IDTEntry::new(mh13, Ring::Zero),
+        interrupt14: IDTEntry::new(mh14, Ring::Zero),
+        interrupt15: IDTEntry::new(mh15, Ring::Zero),
+        interrupt16: IDTEntry::new(mh16, Ring::Zero),
         ..Default::default()
     };
 }

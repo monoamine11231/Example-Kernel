@@ -6,6 +6,8 @@ use heapless::String;
 use core::arch::asm;
 use core::fmt::Write;
 use core::panic::PanicInfo;
+
+use super::qemu_io::qemu_println;
 //use core::option;
 
 fn format_line_number(line: u32) -> &'static str {

@@ -7,7 +7,8 @@ pub fn outb(port: u16, value: u8) {
              "mov al, {1}",
              "out dx, al",
              in(reg) port,
-             in(reg_byte) value
+             in(reg_byte) value,
+             options(nostack, preserves_flags, nomem)
         );
     }
 }
@@ -19,7 +20,8 @@ pub fn outw(port: u16, value: u16) {
              "mov ax, {1:x}",
              "out dx, ax",
              in(reg) port,
-             in(reg) value
+             in(reg) value,
+             options(nostack, preserves_flags, nomem)
         );
     }
 }
@@ -31,7 +33,8 @@ pub fn outd(port: u16, value: u32) {
              "mov eax, {1:e}",
              "out dx, eax",
              in(reg) port,
-             in(reg) value
+             in(reg) value,
+             options(nostack, preserves_flags, nomem)
         );
     }
 }
@@ -44,11 +47,11 @@ pub fn inb(port: u16) -> u8 {
              "mov al, {1}",
              "in al, dx",
              in(reg) port,
-             out(reg_byte) value
-
+             out(reg_byte) value,
+             options(nostack, preserves_flags, nomem)
         );
     }
-    return value;
+    value
 }
 
 /// Returns a WORD from a 16-bit serial port address
@@ -59,11 +62,11 @@ pub fn inw(port: u16) -> u16 {
              "mov ax, {1:x}",
              "in ax, dx",
              in(reg) port,
-             out(reg) value
-
+             out(reg) value,
+             options(nostack, preserves_flags, nomem)
         );
     }
-    return value;
+    value
 }
 
 /// Returns a DWORD from a 16-bit serial port address
@@ -74,9 +77,9 @@ pub fn ind(port: u16) -> u32 {
              "mov eax, {1:e}",
              "in eax, dx",
              in(reg) port,
-             out(reg) value
-
+             out(reg) value,
+             options(nostack, preserves_flags, nomem)
         );
     }
-    return value;
+    value
 }
