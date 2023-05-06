@@ -35,6 +35,9 @@ pub fn no_sound() {
     outb(0x61, tmp);
 }
 
-pub fn beep() {
-    play_sound(1000);
+pub fn beep(freq: u32, duration: usize) {
+    play_sound(freq);
+    crate::waste_time(10000 * duration as u64);
+    no_sound();
+    println!("Played sound!");
 }
