@@ -29,7 +29,7 @@ macro_rules! qemu_print {
         use core::fmt::Write;
         use crate::WRITER;
         
-        let mut formatted_string = String::<{crate::ORMAT_STRING_SIZE}>::new();
+        let mut formatted_string = String::<{crate::FORMAT_STRING_SIZE}>::new();
         write!(&mut formatted_string, $string, $($arg)*).unwrap();
         crate::tooling::qemu_io::qemu_print(&formatted_string);
     }};

@@ -1,13 +1,12 @@
 use crate::tooling::vga;
 use crate::tooling::vga::VGAWriter;
 use crate::WRITER;
-use crate::{print, println, FORMAT_STRING_SIZE};
+use crate::{print, println, FORMAT_STRING_SIZE, qemu_print, qemu_println};
 use heapless::String;
 use core::arch::asm;
 use core::fmt::Write;
 use core::panic::PanicInfo;
 
-use super::qemu_io::qemu_println;
 //use core::option;
 
 fn format_line_number(line: u32) -> &'static str {
@@ -122,7 +121,7 @@ pub fn panic(info: &PanicInfo) -> ! {
         WRITER.color = 0xc;
         WRITER.newline();
     }
-        qemu_print!("PANIC");
+        qemu_print!("\nPANIC");
 
         if let Some(message) = info.message() {
             qemu_println!(" - `{}`", message); // message(*message, None);

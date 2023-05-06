@@ -14,7 +14,7 @@ os.img: cargo mbr.bin vbr.bin
 	sh makeimg_half.sh
 
 run: os.img
-	sudo sh fstest.sh
+	# sudo sh fstest.sh
 	qemu-system-x86_64 -drive format=raw,media=disk,file=build/os.img -serial stdio -no-reboot -no-shutdown
 
 debug: os.img

@@ -17,6 +17,7 @@ mod pic;
 mod tooling;
 mod format;
 mod test_funcs;
+mod audio_system;
 use core::arch::asm;
 use core::fmt::Write;
 use core::str::Bytes;
@@ -29,8 +30,10 @@ use mem::memory::{self, *};
 use tooling::qemu_io::{qemu_print_hex, qemu_println};
 use tooling::vga::write_str_at;
 use core::borrow::BorrowMut;
+use audio_system::audio;
 
 use crate::tooling::vga::VGAWriter;
+pub const FORMAT_STRING_SIZE: usize = 256;
 static mut WRITER: VGAWriter = VGAWriter {
     buffer: &mut [0],
     idx: 0,
@@ -46,25 +49,20 @@ pub extern "C" fn _start() -> ! {
     let mut i = 0;
 
     load_idt(&IDTX);
-<<<<<<< HEAD
-    apic::init();
-    let (a, b, c) = pci_device_search_by_class_subclass(0x01, 0x01);
+    pic::init();
     test_funcs::rainbow_print("Hello world!!");
-    loop {
-        // if i % 150_000_000 == 0 {unsafe { println!("Hello world {}", i); WRITER.color = (WRITER.color + 1) % 16;}}
-        i += 10000;
-    }
-=======
     memory::init();
     pic::init();
+    audio::beep();
 
     let buf: [u8; 10] = [0x10u8; 10];
 
     let mut ide_processor: IDE = Default::default();
     ide_processor.init();
-    let mut fs_processor = fat32::FAT32::new(&mut ide_processor).unwrap();
+    // let mut fs_processor = fat32::FAT32::new(&mut ide_processor).unwrap();
 
     let mut buf: [u8; 64] = [0x00u8; 64];
+    /*
     fs_processor.read_file("KEK/ABA/LOL3.TXT", &mut buf, 420);
     fs_processor.delete_directory("KEK/ABA").unwrap();
     fs_processor.create_file("KEK", "A.TXT").unwrap();
@@ -81,11 +79,12 @@ pub extern "C" fn _start() -> ! {
     fs_processor.create_file("UUU/OOO", "LOL.TXT").unwrap();
     
     fs_processor.write_file("UUU/OOO/LOL.TXT", str2.as_bytes(), str2.len()).unwrap();
-
+    
     
 
     /* From reading a file */
     qemu_println(unsafe { core::str::from_utf8_unchecked(&buf) });
+    */
 
     //qemu_print_hex(a);
 
@@ -99,7 +98,6 @@ pub extern "C" fn _start() -> ! {
     // }
 
     loop {}
->>>>>>> origin
 }
 
 lazy_static! {
