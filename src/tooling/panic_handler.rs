@@ -1,8 +1,7 @@
 use crate::tooling::vga;
 use crate::tooling::vga::VGAWriter;
 use crate::WRITER;
-use crate::tooling::format;
-use crate::{println, FORMAT_STRING_SIZE};
+use crate::{print, println, FORMAT_STRING_SIZE};
 use heapless::String;
 use core::arch::asm;
 use core::fmt::Write;
@@ -119,18 +118,20 @@ pub fn panic(info: &PanicInfo) -> ! {
     //let mut vga: VGAWriter = VGAWriter::new();
     unsafe {
         WRITER.color = 0xc;
-        println!("PANIC");
-
-        if let Some(location) = info.location() {
-            println!("{}", location); //print_location(&mut WRITER, location);
-        }
+        WRITER.newline();
+    }
+        qemu_print!("PANIC");
 
         if let Some(message) = info.message() {
-            println!("{}", message); // message(*message, None);
+            qemu_println!(" - `{}`", message); // message(*message, None);
+        } else {
+            qemu_println!();
         }
-        WRITER.newline();
-        WRITER.newline();
-        // stack_trace(&mut WRITER);
-    }
+
+        if let Some(location) = info.location() {
+            qemu_print!("at {}", location); //print_location(&mut WRITER, location);
+        }
+
+        //unsafe { stack_trace(&mut WRITER) };
     loop {}
 }

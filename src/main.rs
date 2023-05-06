@@ -14,6 +14,8 @@ mod bord;
 mod drivers;
 mod handlers;
 mod tooling;
+mod format;
+mod test_funcs;
 use core::arch::asm;
 use core::fmt::Write;
 use core::str::Bytes;
@@ -27,7 +29,6 @@ use heapless::String;
 use tooling::qemu_io::{qemu_print_hex, qemu_println};
 use tooling::vga::write_str_at;
 use core::borrow::BorrowMut;
-use tooling::format::*;
 
 use crate::tooling::vga::VGAWriter;
 static mut WRITER: VGAWriter = VGAWriter {
@@ -45,8 +46,9 @@ pub extern "C" fn _start() -> ! {
     load_idt(&IDTX);
     apic::init();
     let (a, b, c) = pci_device_search_by_class_subclass(0x01, 0x01);
+    test_funcs::rainbow_print("Hello world!!");
     loop {
-        if i % 100_000_000 == 0 { println!("Hello world {}", i); }
+        // if i % 150_000_000 == 0 {unsafe { println!("Hello world {}", i); WRITER.color = (WRITER.color + 1) % 16;}}
         i += 10000;
     }
 }
