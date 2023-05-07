@@ -6,6 +6,11 @@
 [org 0x7c00]
 [bits 16]
 main16:
+    
+    mov ah, 0x00                    
+    mov al, 0x12
+    int 0x10                        ;Telling Bios to setup VGA mode 12
+    
     mov bp, FIRST_STACK             ; Setup stack at 0x7BFF
     mov sp, bp
     
