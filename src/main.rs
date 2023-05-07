@@ -45,34 +45,13 @@ use crate::math::vec2;
 #[link_section = ".start"]
 pub extern "C" fn _start() -> ! {
     load_idt(&IDTX);
-    //write_str_at("Hello World!", 0, 0, 0xb);
     output_rsp();
-    //qemu_println("hello from serial terminal IO");
-    //test_graphics_mode_105_vesa();
-    //test_graphics_mode_12();
 
     let my_root = math::utils::sqrt(5.0);
     qemu_fmt_println("{}", format_args!("{}", my_root));
     test_graphics_lib();
-    //test_graphics_mode_12();
 
     output_rsp();
-    //test_graphics_mode_12();
-    /*
-    unsafe {
-        asm!(
-            "div {0:e}",
-            in(reg) 0,
-        )
-    }
-    */
-    //memory::init();
-    //apic::init();
-    //let (a, b, c) = pci_device_search_by_class_subclass(0x01, 0x01);
-    //qemu_print_hex(RSDTX.0.length);
-    //qemu_print_hex(a as u32);
-    //qemu_print_hex(b as u32);
-    //qemu_print_hex(c as u32);
     memory::init();
     pic::init();
 
@@ -82,6 +61,7 @@ pub extern "C" fn _start() -> ! {
     ide_processor.init();
     let mut fs_processor = fat32::FAT32::new(&mut ide_processor).unwrap();
 
+    /*
     let mut buf: [u8; 64] = [0x00u8; 64];
     fs_processor.read_file("KEK/ABA/LOL3.TXT", &mut buf, 420);
     fs_processor.delete_directory("KEK/ABA").unwrap();
@@ -111,7 +91,7 @@ pub extern "C" fn _start() -> ! {
 
     //qemu_print_hex(a);
 
-    write_str_at("Hello World!", 0, 0, 0xb);
+    */
 
     // unsafe {
     //     asm!(
