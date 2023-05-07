@@ -3,6 +3,7 @@ use crate::tooling::serial::*;
 use core::ptr;
 //Enum corresponding to the default color palette
 #[derive(PartialEq, Eq, Clone, Copy)]
+#[repr(u8)]
 pub enum ColorCode {
     Black = 0x0,
     Blue = 0x1,

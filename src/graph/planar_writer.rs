@@ -9,6 +9,7 @@ use crate::tooling::serial::outw;
 
 use core::cmp::max;
 use core::cmp::min;
+use core::ptr::read_volatile;
 
 /*
 Represents the write layer of the graphics component
@@ -167,6 +168,7 @@ impl VGA_planar_writer {
                     VGA_planar_writer::VIDEO_MEM_BASE,
                     VGA_planar_writer::VIDEO_MEM_SZ,
                 ),
+
                 plane_buffer: core::slice::from_raw_parts_mut(
                     VGA_planar_writer::VIDEO_MEM_EXT_BASE,
                     VGA_planar_writer::VIDEO_MEM_EXT_SZ,
@@ -175,8 +177,7 @@ impl VGA_planar_writer {
                 plane: Planar::new(),
             }
         };
-        //A.color_test();
-        //ColorPalette::read_vga_dac_state();
+        VGA_planar_writer::setup_registers();
         A.reset_ext_memory();
         return A;
     }
@@ -202,7 +203,57 @@ impl VGA_planar_writer {
         }
     }
 
+    pub fn setup_registers() {
+        //Data rotate register, no rotation, no modification
+        outb(0x3ce, 0x03);
+        outb(0x3cf, 0x00);
+
+        //Setting up final bitmask
+        outb(0x3ce, 0x08);
+        outb(0x3cf, 0xff);
+
+        //Setting "Enable Set/Register"
+        outb(0x3ce, 0x01);
+        outb(0x3cf, 0x0);
+    }
+
+    pub fn set_write_mode(mode: u8) {
+        assert!(mode < 4);
+        //Write mode register, picking write mode 0, read mode 0
+
+        let stashed = inb(0x3cf);
+        outb(0x3ce, 0x05);
+        outb(0x3cf, (stashed & 0xfc) | mode);
+    }
+
     pub fn write_pixel_2(&mut self, row: usize, col: usize, color: ColorCode) {
+        VGA_planar_writer::setup_registers();
+        //VGA_planar_writer::set_write_mode(0, color);
+
+        let stashed_adress_reg = inb(0x3c4);
+        outb(0x3c4, 0x02);
+
+        let stashed_data_reg = inb(0x3c5);
+        outb(0x3c5, stashed_data_reg & (color as u8));
+        outb(0x3c4, stashed_adress_reg);
+
+        //Data rotate register, no rotation, OR
+        outb(0x3ce, 0x03);
+        outb(0x3cf, 0x10);
+
+        //outb(0x3ce, )
+
+        let bit_pos = col % 8;
+        let buffer_idx = (VGA_planar_writer::SCAN_LN_SZ * row + col / 8) as usize;
+        let mask = VGA_planar_writer::BIT_MAPPING[bit_pos as usize];
+        //qemu_print_hex(mask as u32);
+
+        self.plane_buffer[buffer_idx + 1 * VGA_planar_writer::PLANE_SZ] |= mask;
+        self.video_buffer[buffer_idx] =
+            self.plane_buffer[buffer_idx + 1 * VGA_planar_writer::PLANE_SZ]; //self.video_buffer[buffer_idx] | mask;
+    }
+
+    pub fn clear_screen_2(&mut self) {
         //Set/Reset register, all 1
         outb(0x3ce, 0x0);
         outb(0x3cf, 0xff);
@@ -211,28 +262,23 @@ impl VGA_planar_writer {
         outb(0x3ce, 0x01);
         outb(0x3cf, 1);
 
-        if (color == ColorCode::Blue) {
-            //Memory planes registers
-            outb(0x3c4, 0x02);
-            outb(0x3c5, 0x01);
-        } else {
-            outb(0x3c4, 0x02);
-            outb(0x3c5, 0x02);
-        }
+        //Pick all planes
+        outb(0x3c4, 0x02);
+        outb(0x3c4, 0xf);
 
-        //Data rotate register
+        //Do not rotate, and use AND
         outb(0x3ce, 0x03);
-        outb(0x3cf, 0x10);
+        outb(0x3cf, 0x8);
 
         //Write mode register
         outb(0x3ce, 0x05);
         outb(0x3cf, 0x0);
 
-        let bit_pos = col % 8;
-        let buffer_idx = (VGA_planar_writer::SCAN_LN_SZ * row + col / 8) as usize;
-        let mask = VGA_planar_writer::BIT_MAPPING[bit_pos as usize];
-
-        self.video_buffer[buffer_idx] = 255;
+        for i in 0..VGA_planar_writer::VIDEO_MEM_SZ {
+            self.video_buffer[i] = 0;
+            //let row = (i * 8) / 80;
+            //self.write_pixel_2(i/80, i%, color)
+        }
     }
 
     fn col_clip(&mut self, x: i32) -> usize {
@@ -308,8 +354,40 @@ impl VGA_planar_writer {
     fn replicate_plane(&mut self, planar: usize) {
         let offset: usize = planar * VGA_planar_writer::PLANE_SZ;
         for i in 0..VGA_planar_writer::PLANE_SZ {
-            self.video_buffer[i] = self.plane_buffer[i + offset];
+            //self.video_buffer[i] = self.plane_buffer[i + offset];
         }
+    }
+
+    fn replicate(&mut self) {
+        VGA_planar_writer::set_write_mode(0);
+
+        for k in 0..4 {
+            outb(0x3c4, 0x02);
+            outb(0x3c5, 1 << k);
+
+            unsafe {
+                let ptr = self
+                    .plane_buffer
+                    .as_ptr()
+                    .add(k * VGA_planar_writer::PLANE_SZ);
+                self.video_buffer
+                    .copy_from_slice(core::slice::from_raw_parts(
+                        ptr,
+                        VGA_planar_writer::PLANE_SZ,
+                    ));
+            }
+        }
+    }
+
+    pub fn set_pixel(&mut self, row: usize, col: usize, color: u8) {
+        let pixel_mask = 0x80 >> (col & 0x07);
+        let buffer_idx = (VGA_planar_writer::SCAN_LN_SZ * row + col / 8) as usize;
+        outb(0x3ce, 0x08);
+        outb(0x3cf, pixel_mask);
+        unsafe {
+            let a = self.video_buffer[buffer_idx];
+        }
+        self.video_buffer[buffer_idx] = color;
     }
 
     pub fn print_plane(&mut self, planar: usize) {
@@ -319,13 +397,9 @@ impl VGA_planar_writer {
         }
     }
 
-    pub fn present(&mut self) {
-        qemu_println("Presenting new frame");
-        //self.palette.update_vga_dac_state();
-        for i in 0..4 {
-            self.plane.switch(i);
-            self.replicate_plane(i);
-        }
+    pub fn present(&mut self, frame_nr: u32) {
+        qemu_fmt_println("{}", format_args!("Presenting frame: {}", frame_nr));
+        self.replicate();
         //self.plane.restore();
     }
 
@@ -334,12 +408,16 @@ impl VGA_planar_writer {
     }
 
     pub fn fill_screen(&mut self, color: ColorCode) {
-        //self.reset_ext_memory();
-        self.reset_video_memory();
-        for i in 0..480 {
-            for j in 0..640 {
-                //self.write_pixel(i, j, color);
-                self.write_pixel_2(i, j, color);
+        for k in 0..4 {
+            let bit = (color as u8) & (1 << k);
+            let mut fill_val = if (bit > 0) { 255 } else { 0 };
+            unsafe {
+                let ptr = self
+                    .plane_buffer
+                    .as_mut_ptr()
+                    .add(k * VGA_planar_writer::PLANE_SZ);
+                let mut slice = core::slice::from_raw_parts_mut(ptr, VGA_planar_writer::PLANE_SZ);
+                slice.fill(fill_val);
             }
         }
     }

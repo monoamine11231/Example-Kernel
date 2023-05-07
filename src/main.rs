@@ -125,10 +125,13 @@ pub fn test_graphics_lib() {
         if (counter % 2 == 0) {
             writer.fill_screen(ColorCode::Blue);
         } else {
-            writer.fill_screen(ColorCode::Green);
+            //writer.fill_screen(ColorCode::Green);
+            //writer.write_circle((0, 0), 100, ColorCode::Green);
+            writer.fill_screen(ColorCode::Gray);
         }
+        writer.present(counter);
         counter += 1;
-        wait(10000000);
+        wait(100000000);
     }
 
     //writer.color_test();
