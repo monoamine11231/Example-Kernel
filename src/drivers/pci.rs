@@ -31,30 +31,30 @@ pub struct PCIDeviceCommonHeader {
 #[repr(C, packed)]
 #[derive(Default, Debug, Copy, Clone)]
 pub struct PCIDeviceHeader0x00 {
-    bar0: u32,
-    bar1: u32,
-    bar2: u32,
-    bar3: u32,
-    bar4: u32,
-    bar5: u32,
+    pub bar0: u32,
+    pub bar1: u32,
+    pub bar2: u32,
+    pub bar3: u32,
+    pub bar4: u32,
+    pub bar5: u32,
 
-    cardbus_cis_pointer: u32,
+    pub cardbus_cis_pointer: u32,
 
-    subsystem_vendor_id: u16,
-    subsystem_id: u16,
+    pub subsystem_vendor_id: u16,
+    pub subsystem_id: u16,
 
-    expansion_rom_bar: u32,
+    pub expansion_rom_bar: u32,
 
-    capabilities_pointer: u8,
+    pub capabilities_pointer: u8,
     reserved0: u8,
     reserved1: u16,
 
     reserved2: u32,
 
-    interrupt_line: u8,
-    interrupt_pin: u8,
-    min_grant: u8,
-    max_latency: u8,
+    pub interrupt_line: u8,
+    pub interrupt_pin: u8,
+    pub min_grant: u8,
+    pub max_latency: u8,
 }
 
 /// PCI Device Header for devices with header type of 0x01.
@@ -62,39 +62,39 @@ pub struct PCIDeviceHeader0x00 {
 #[repr(C, packed)]
 #[derive(Default, Debug, Copy, Clone)]
 pub struct PCIDeviceHeader0x01 {
-    bar0: u32,
-    bar1: u32,
+    pub bar0: u32,
+    pub bar1: u32,
 
-    primary_bus_number: u8,
-    secondary_bus_number: u8,
-    subordinate_bus_number: u8,
-    secondary_latency_timer: u8,
+    pub primary_bus_number: u8,
+    pub secondary_bus_number: u8,
+    pub subordinate_bus_number: u8,
+    pub secondary_latency_timer: u8,
 
-    io_base: u8,
-    io_limit: u8,
-    secondary_status: u16,
+    pub io_base: u8,
+    pub io_limit: u8,
+    pub secondary_status: u16,
 
-    memory_base: u16,
-    memory_limit: u16,
+    pub memory_base: u16,
+    pub memory_limit: u16,
 
-    prefetchable_memory_base: u16,
-    prefetchable_memory_limit: u16,
+    pub prefetchable_memory_base: u16,
+    pub prefetchable_memory_limit: u16,
 
-    prefetchable_base_upper_32: u32,
-    prefetchable_limit_upper_32: u32,
+    pub prefetchable_base_upper_32: u32,
+    pub prefetchable_limit_upper_32: u32,
 
-    io_base_upper_16: u16,
-    io_limit_upper_16: u16,
+    pub io_base_upper_16: u16,
+    pub io_limit_upper_16: u16,
 
-    capability_pointer: u8,
+    pub capability_pointer: u8,
     reserved0: u8,
     reserved1: u16,
 
-    expansion_rom_bar: u32,
+    pub expansion_rom_bar: u32,
 
-    interrupt_line: u8,
-    interrupt_pin: u8,
-    bridge_control: u16,
+    pub interrupt_line: u8,
+    pub interrupt_pin: u8,
+    pub bridge_control: u16,
 }
 
 /// PCI Device Header for devices with header type of 0x02.
@@ -186,6 +186,11 @@ pub fn pci_get_subclass(bus: u8, slot: u8, function: u8) -> u8 {
     return pci_read_u8(bus, slot, function, 0xA);
 }
 
+/// Extracts and returns the prog IF byte at given bus #, slot #, function #
+pub fn pci_get_progif(bus: u8, slot: u8, function: u8) -> u8 {
+    return pci_read_u8(bus, slot, function, 0x9);
+}
+
 /// Extracts and returns the header type at given bus #, slot #, function #
 pub fn pci_get_header_type(bus: u8, slot: u8, function: u8) -> u8 {
     return pci_read_u8(bus, slot, function, 0xE);
@@ -207,13 +212,15 @@ pub fn pci_get_common_header(bus: u8, slot: u8, function: u8) -> PCIDeviceCommon
 /// Extracts and returns the PCI device header of type 0x00 as a struct,
 /// at given bus #, slot #, function #. Tests if the header type of the device is valid
 /// and if the device exists at all
-pub fn pci_get_header_0x00(bus: u8, slot: u8, function: u8) -> PCIDeviceHeader0x00 {
+pub fn pci_get_header_0x00(bus: u8, slot: u8, function: u8) -> Result<PCIDeviceHeader0x00, u8> {
     if pci_get_vendor_id(bus, slot, function) == 0xFFFF {
-        panic!("Device with unvalid vendor ID was given");
+        /*Device with unvalid vendor ID was given*/
+        return Err(0x00);
     }
 
     if pci_get_header_type(bus, slot, function) != 0x00 {
-        panic!("Device with header type of 0x00 was expected");
+        /*Device with header type of 0x00 was expected*/
+        return Err(0x01);
     }
 
     let mut header_buffer: [u32; 12] = [0 as u32; 12];
@@ -229,19 +236,21 @@ pub fn pci_get_header_0x00(bus: u8, slot: u8, function: u8) -> PCIDeviceHeader0x
     }
 
     let header: PCIDeviceHeader0x00 = unsafe { *(header_buffer.as_ptr() as *const _) };
-    return header;
+    Ok(header)
 }
 
 /// Extracts and returns the PCI device header of type 0x01 as a struct,
 /// at given bus #, slot #, function #. Tests if the header type of the device is valid
 /// and if the device exists at all
-pub fn pci_get_header_0x01(bus: u8, slot: u8, function: u8) -> PCIDeviceHeader0x01 {
+pub fn pci_get_header_0x01(bus: u8, slot: u8, function: u8) -> Result<PCIDeviceHeader0x01, u8> {
     if pci_get_vendor_id(bus, slot, function) == 0xFFFF {
-        panic!("Device with unvalid vendor ID was given");
+        /*Device with unvalid vendor ID was given*/
+        return Err(0x00);
     }
 
     if pci_get_header_type(bus, slot, function) != 0x01 {
-        panic!("Device with header type of 0x01 was expected");
+        /*Device with header type of 0x01 was expected*/
+        return Err(0x02);
     }
 
     let mut header_buffer: [u32; 12] = [0 as u32; 12];
@@ -257,19 +266,21 @@ pub fn pci_get_header_0x01(bus: u8, slot: u8, function: u8) -> PCIDeviceHeader0x
     }
 
     let header: PCIDeviceHeader0x01 = unsafe { *(header_buffer.as_ptr() as *const _) };
-    return header;
+    Ok(header)
 }
 
 /// Extracts and returns the PCI device header of type 0x02 as a struct,
 /// at given bus #, slot #, function #. Tests if the header type of the device is valid
 /// and if the device exists at all
-pub fn pci_get_header_0x02(bus: u8, slot: u8, function: u8) -> PCIDeviceHeader0x02 {
+pub fn pci_get_header_0x02(bus: u8, slot: u8, function: u8) -> Result<PCIDeviceHeader0x02, u8> {
     if pci_get_vendor_id(bus, slot, function) == 0xFFFF {
-        panic!("Device with unvalid vendor ID was given");
+        /*Device with unvalid vendor ID was given*/
+        return Err(0x00);
     }
 
     if pci_get_header_type(bus, slot, function) != 0x02 {
-        panic!("Device with header type of 0x02 was expected");
+        /*Device with header type of 0x02 was expected*/
+        return Err(0x03);
     }
 
     let mut header_buffer: [u32; 14] = [0 as u32; 14];
@@ -285,7 +296,7 @@ pub fn pci_get_header_0x02(bus: u8, slot: u8, function: u8) -> PCIDeviceHeader0x
     }
 
     let header: PCIDeviceHeader0x02 = unsafe { *(header_buffer.as_ptr() as *const _) };
-    return header;
+    Ok(header)
 }
 
 /// Returns the actual address determined in BAR. Accepts both mem and IO BAR
@@ -303,7 +314,7 @@ pub fn pci_get_bar_address(bar: u32) -> u32 {
 /// Returns the bus #, slot # and function # in a triple when found a device with the
 /// given class code. If such device was not found, returns (0xFF, 0xFF, 0xFF) as a
 /// signifier. This function brute forces through all bus lanes and slots.
-pub fn pci_device_search_by_class_subclass(class: u8, subclass: u8) -> (u8, u8, u8) {
+pub fn pci_device_search_by_class_subclass(class: u8, subclass: u8) -> Result<(u8, u8, u8), u8> {
     /* Iteration not working :/ */
     for bus in 0u8..=255u8 {
         for slot in 0u8..32u8 {
@@ -317,7 +328,7 @@ pub fn pci_device_search_by_class_subclass(class: u8, subclass: u8) -> (u8, u8, 
             let target_class: u8 = pci_get_class(bus, slot, 0x00);
             let target_subclass: u8 = pci_get_subclass(bus, slot, 0x00);
             if target_class == class && target_subclass == subclass {
-                return (bus, slot, 0x00);
+                return Ok((bus, slot, 0x00));
             }
 
             /* If the bit 7 is not set, the device has NOT multiple functions */
@@ -333,12 +344,12 @@ pub fn pci_device_search_by_class_subclass(class: u8, subclass: u8) -> (u8, u8, 
 
                 /* If found at different function number, return and exist */
                 if target_class == class && target_subclass == subclass {
-                    return (bus, slot, function);
+                    return Ok((bus, slot, function));
                 }
             }
         }
     }
 
-    /* If iterated through all the devices and not found, return a triple of 0xFF */
-    return (0xFF, 0xFF, 0xFF);
+    /* If iterated through all the devices and not found */
+    Err(0x00)
 }

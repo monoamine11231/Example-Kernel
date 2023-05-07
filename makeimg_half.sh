@@ -43,7 +43,7 @@ KERNEL_SECTORS=$(($((KERNEL_SIZE+511))/512))
 dd if=/dev/zero of=build/os.img bs=512 count=100000
 # +2 sectors for VBR and FSInfo structs
 
-mkfs.fat -b 0 -F 32 -M 0xf8 --mbr=n -R $((KERNEL_SECTORS+2)) --offset=1 build/os.img
+mkfs.fat -b 0 -h 1 -F 32 -M 0xf8 --mbr=n -R $((KERNEL_SECTORS+2)) --offset=1 build/os.img
 dd if=build/bootloader/mbr.bin of=build/os.img bs=512 count=1 conv=notrunc
 dd if=build/bootloader/vbr.bin of=build/os.img bs=1 count=420 conv=notrunc seek=602
 dd if=build/kernel.bin of=build/os.img bs=512 count=$KERNEL_SECTORS seek=3 conv=notrunc
