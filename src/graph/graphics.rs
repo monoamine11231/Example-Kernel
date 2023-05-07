@@ -1,4 +1,3 @@
-use crate::graph::planar::*;
 use crate::graph::planar_writer::*;
 use crate::graph::utils::*;
 use crate::tooling::qemu_io::*;

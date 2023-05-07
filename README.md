@@ -29,3 +29,9 @@ The map of lower memory (&lt;1MiB) should be complemented with [Memory Map (x86)
 | 0x100000             | 0x600                       | First three sectors (MBR + VBR + extra) (Yes, repeated) |
 | 0x100600             | NaN                         | Kernel                                                  |
 
+## Notes
+The vec2 are either have f32 or usize elements. 
+To create a vec2 that is usize: `Vec2::<usize>::new()`
+
+
+

@@ -35,9 +35,12 @@ use tooling::qemu_io::{
 };
 use tooling::vga::write_str_at;
 
+use crate::graph::font_data;
+use crate::graph::font_writer;
 use crate::graph::graphics;
 use crate::graph::planar_writer;
 use crate::graph::surface;
+
 use crate::handlers::*;
 use crate::math::vec2;
 
@@ -45,15 +48,14 @@ use crate::math::vec2;
 #[link_section = ".start"]
 pub extern "C" fn _start() -> ! {
     load_idt(&IDTX);
-    output_rsp();
 
     let my_root = math::utils::sqrt(5.0);
     qemu_fmt_println("{}", format_args!("{}", my_root));
-    test_graphics_lib();
 
-    output_rsp();
     memory::init();
     pic::init();
+
+    test_graphics_lib();
 
     let buf: [u8; 10] = [0x10u8; 10];
 
@@ -135,9 +137,12 @@ pub fn wait(t: u64) {
 
 pub fn test_graphics_lib() {
     qemu_println("Test!");
-    let mut writer = planar_writer::VGA_planar_writer::new();
+    let mut writer = planar_writer::VgaPlanarWriter::new();
 
     //writer.write_pixel_2(0, 0, ColorCode::Blue);
+
+    let mut A = Surface::from_font('A', font_data::BASIC_FONT, ColorCode::White, None);
+    A.set_origin(Vec2::<usize>::new(100, 100));
 
     let mut counter = 0;
     loop {
@@ -145,12 +150,15 @@ pub fn test_graphics_lib() {
             writer.fill_screen(ColorCode::Blue);
         } else {
             //writer.fill_screen(ColorCode::Green);
-            //writer.write_circle((0, 0), 100, ColorCode::Green);
-            writer.fill_screen(ColorCode::Gray);
+            writer.write_circle((0, 0), 100, ColorCode::Green);
+            //writer.fill_screen(ColorCode::Gray);
         }
+
+        writer.write_surface(&A);
+
         writer.present(counter);
         counter += 1;
-        wait(100000000);
+        //wait(100000000);
     }
 
     //writer.color_test();
