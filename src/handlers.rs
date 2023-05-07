@@ -1,4 +1,3 @@
-use crate::utils::qemu_io::*;
 use core::panic::PanicInfo;
 
 use crate::tooling::{

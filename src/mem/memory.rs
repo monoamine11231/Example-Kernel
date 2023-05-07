@@ -307,7 +307,6 @@ impl core::fmt::Display for PT {
 
 fn get_page(addr: u64) {
     // verify sign extension
-
     // traverse page table
 }
 

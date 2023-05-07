@@ -12,7 +12,7 @@ pub enum Ring {
     Three,
 }
 
-#[repr(C, packed(1))]
+#[repr(C, packed)]
 #[derive(Default, Debug)]
 
 pub struct SegmentDescriptor {
@@ -48,7 +48,7 @@ pub fn load_idt(idt: &'static IDT) {
     }
 }
 
-#[repr(C, packed(1))]
+#[repr(C, packed)]
 struct IDTDescriptor<'a> {
     size: u16,
     offset: &'a IDT,
@@ -160,7 +160,7 @@ impl SegmentSelector {
     }
 }
 
-#[repr(C, packed(1))]
+#[repr(C, packed)]
 #[derive(Default)]
 pub struct GDTR {
     pub limit: u16,

@@ -130,7 +130,7 @@ pub fn get_font_entry(a: char) -> usize {
 
 pub struct VGA_planar_writer {
     video_buffer: &'static mut [u8],
-    plane_buffer: &'static mut [u8],
+    plane_buffer: [u8; VGA_planar_writer::VIDEO_MEM_EXT_SZ],
     pub palette: ColorPalette,
     plane: Planar,
 }
@@ -169,10 +169,8 @@ impl VGA_planar_writer {
                     VGA_planar_writer::VIDEO_MEM_SZ,
                 ),
 
-                plane_buffer: core::slice::from_raw_parts_mut(
-                    VGA_planar_writer::VIDEO_MEM_EXT_BASE,
-                    VGA_planar_writer::VIDEO_MEM_EXT_SZ,
-                ),
+                plane_buffer: [0; VGA_planar_writer::VIDEO_MEM_EXT_SZ],
+
                 palette: ColorPalette::new(),
                 plane: Planar::new(),
             }
