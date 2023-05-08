@@ -3,7 +3,6 @@ use crate::tooling::qemu_io::{qemu_fmt_println, qemu_print_hex, qemu_println};
 use core::mem;
 use core::mem::size_of;
 use core::ptr;
-
 use core::ptr::{addr_of_mut, *};
 // do not allocate over regions referenced by e820
 
@@ -15,12 +14,12 @@ pub struct Allocator {
 // how to singleton ?????? (with custom bootloader)
 impl Allocator {
     pub unsafe fn new() -> &'static mut Self {
-        let mut adata = ((1 << 30) + 0xFFFFF + 1) as *mut Allocator;
+        let mut adata = ((1 << 30) + 0x1000000) as *mut Allocator;
         (*adata).head = (adata as u64 + (size_of::<Self>() as u64)) as *mut u8;
         &mut *adata
     }
     pub unsafe fn get() -> &'static mut Self {
-        let mut adata = ((1 << 30) + 0xFFFFF + 1) as *mut Allocator;
+        let mut adata = ((1 << 30) + 0x1000000) as *mut Allocator;
         &mut *adata
     }
 }
