@@ -1,6 +1,7 @@
 use crate::graph::surface::*;
 use crate::graph::utils::*;
 use crate::math::vec2::*;
+use crate::mem::alloc::kalloc;
 use crate::tooling::qemu_io::*;
 use crate::tooling::serial::inb;
 use crate::tooling::serial::outb;
@@ -28,6 +29,8 @@ https://qbmikehawk.neocities.org/articles/palette/
 pub struct VgaPlanarWriter {
     video_buffer: &'static mut [u8],
     plane_buffer: [u8; VgaPlanarWriter::PLANE_BUFF_SZ],
+    //plane_buffer: &'static mut [u8],
+    //plane_buffer: *mut ColorCode,
     pub palette: ColorPalette,
 }
 
@@ -42,6 +45,9 @@ impl VgaPlanarWriter {
 
     //Video memory adress
     const VIDEO_MEM_BASE: *mut u8 = 0xA0000 as *mut u8;
+
+    //Alternative plane buffer memory adress
+    const PLANE_BUFF_BASE: *mut u8 = 0x1e8480 as *mut u8;
 
     //The size of one bitplane(plane)
     const PLANE_SZ: usize = VgaPlanarWriter::SCAN_LN_CNT * VgaPlanarWriter::SCAN_LN_SZ;
@@ -59,8 +65,19 @@ impl VgaPlanarWriter {
                     VgaPlanarWriter::VIDEO_MEM_BASE,
                     VgaPlanarWriter::VIDEO_MEM_SZ,
                 ),
-
+                /*
+                plane_buffer: core::slice::from_raw_parts_mut(
+                    VgaPlanarWriter::PLANE_BUFF_BASE,
+                    VgaPlanarWriter::PLANE_BUFF_SZ,
+                ),
+                */
                 plane_buffer: [0; VgaPlanarWriter::PLANE_BUFF_SZ],
+                /*
+                plane_buffer: core::slice::from_raw_parts_mut(
+                    p as *mut u8,
+                    VgaPlanarWriter::PLANE_BUFF_SZ,
+                ),
+                */
                 palette: ColorPalette::new(),
             }
         };

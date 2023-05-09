@@ -4,7 +4,7 @@ use core::arch::asm;
 use core::fmt::Write;
 use core::panic::PanicInfo;
 
-use super::qemu_io::qemu_println;
+use super::qemu_io::{qemu_print, qemu_println};
 //use core::option;
 
 fn format_line_number(line: u32) -> &'static str {
@@ -42,10 +42,12 @@ fn format_line_number(line: u32) -> &'static str {
 fn print_location(writer: &mut VGAWriter, location: &core::panic::Location) {
     let file = location.file();
     let line = location.line();
-    writer.write_str_at(file, 3, 0, 0xc);
+    qemu_print(file);
+    qemu_print(" ");
+    qemu_print("Line: ");
+
     let line_str = format_line_number(line);
-    writer.write_str_at("Line:", 4, 0, 0xc);
-    writer.write_str_at(&line_str, 4, 6, 0xc);
+    qemu_print(&line_str)
 }
 
 /// Prints the panic message.
@@ -114,7 +116,8 @@ fn dump_current_frame() {}
 #[panic_handler]
 pub fn panic(info: &PanicInfo) -> ! {
     let mut vga: VGAWriter = VGAWriter::new();
-    vga.write_color("PANIC", Some(0xc)); // Print "PANIC" at row 2, column 0 with color 0xc (light red)
+    //vga.write_color("PANIC", Some(0xc)); // Print "PANIC" at row 2, column 0 with color 0xc (light red)
+    qemu_println("PANIC!");
 
     if let Some(location) = info.location() {
         print_location(&mut vga, location);
@@ -123,8 +126,12 @@ pub fn panic(info: &PanicInfo) -> ! {
     if let Some(message) = info.message() {
         print_message(*message, None);
     }
-    vga.newline();
-    vga.newline();
+    //vga.newline();
+    //vga.newline();
+
+    qemu_print("\n");
+    qemu_print("\n");
+
     stack_trace(&mut vga);
     loop {}
 }

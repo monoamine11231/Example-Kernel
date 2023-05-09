@@ -1,3 +1,5 @@
+use core::ptr::null_mut;
+
 use super::font_data::{self, FontData};
 use super::utils::ColorCode;
 use crate::graph::utils;
@@ -10,6 +12,8 @@ Currently the surface size is fixed, this might have to change ones
 we get heap allocation.
 */
 
+//Shallow copies will obviously be created
+#[derive(Copy, Clone)]
 pub struct Surface {
     width: usize,
     height: usize,
@@ -21,6 +25,15 @@ pub struct Surface {
     buffer: *mut ColorCode,
 }
 
+pub const PLACE_HOLDER_SURFACE: Surface = Surface {
+    width: 0,
+    height: 0,
+    origin: Vec2::<usize> { x: 0, y: 0 },
+    background_color: None,
+    ignore_color: None,
+    buffer: null_mut(),
+};
+
 impl Surface {
     //If a background color is not given, the font will be given transparent background
     //In which case, the color black will be treated as the transparent color
@@ -30,6 +43,7 @@ impl Surface {
         color: ColorCode,
         _background_color: Option<ColorCode>,
     ) -> Self {
+        qemu_print("Creating char surface...\n");
         let mut new_surface = Surface {
             width: font.font_width as usize,
             height: font.font_height as usize,
@@ -46,6 +60,7 @@ impl Surface {
         }
 
         let font_map_idx = font_data::get_font_entry(c);
+        qemu_fmt_println("{}", format_args!("Found map idx: {}", font_map_idx));
 
         //Iterating over every bit in 24 bytes
         for i in 0..24 {
@@ -63,6 +78,7 @@ impl Surface {
                 }
             }
         }
+        qemu_print("Returning created char surface!\n");
         return new_surface;
     }
 

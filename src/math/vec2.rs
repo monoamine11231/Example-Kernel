@@ -26,7 +26,6 @@ impl Vec2<f32> {
         return sqrt(((self.x * self.x) + (self.y * self.y)) as f32);
     }
 }
-
 impl Vec2<usize> {
     pub fn magnitude(&self) -> f32 {
         return sqrt(((self.x * self.x) + (self.y * self.y)) as f32);
@@ -43,7 +42,6 @@ impl ops::Add<Vec2<f32>> for Vec2<f32> {
         };
     }
 }
-
 impl ops::Add<Vec2<usize>> for Vec2<usize> {
     type Output = Self;
     fn add(self, rhs: Self) -> Self::Output {
@@ -51,6 +49,34 @@ impl ops::Add<Vec2<usize>> for Vec2<usize> {
             x: self.x + rhs.x,
             y: self.y + rhs.y,
         };
+    }
+}
+
+//Vector add_assign
+impl ops::AddAssign<Vec2<f32>> for Vec2<f32> {
+    fn add_assign(&mut self, rhs: Vec2<f32>) {
+        self.x = self.x + rhs.x;
+        self.y = self.y + rhs.y;
+    }
+}
+impl ops::AddAssign<Vec2<usize>> for Vec2<usize> {
+    fn add_assign(&mut self, rhs: Vec2<usize>) {
+        self.x = self.x + rhs.x;
+        self.y = self.y + rhs.y;
+    }
+}
+
+//Vector sub_assign
+impl ops::SubAssign<Vec2<f32>> for Vec2<f32> {
+    fn sub_assign(&mut self, rhs: Vec2<f32>) {
+        self.x = self.x - rhs.x;
+        self.y = self.y - rhs.y;
+    }
+}
+impl ops::SubAssign<Vec2<usize>> for Vec2<usize> {
+    fn sub_assign(&mut self, rhs: Vec2<usize>) {
+        self.x = self.x - rhs.x;
+        self.y = self.y - rhs.y;
     }
 }
 
@@ -65,7 +91,6 @@ impl ops::Sub<Vec2<f32>> for Vec2<f32> {
         };
     }
 }
-
 impl ops::Sub<Vec2<usize>> for Vec2<usize> {
     type Output = Self;
 
@@ -101,7 +126,6 @@ impl ops::Mul<f32> for Vec2<f32> {
         };
     }
 }
-
 impl ops::Mul<usize> for Vec2<usize> {
     type Output = Self;
     fn mul(self, rhs: usize) -> Self::Output {

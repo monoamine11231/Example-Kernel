@@ -47,7 +47,7 @@ pub fn kalloc(size: usize) -> *mut u8 {
 
 pub fn kalloc_linear(size: usize) -> *mut u8 {
     unsafe {
-        let mut allocator = Allocator::get();
+        let mut allocator: &mut Allocator = Allocator::get();
         allocator.head = (allocator.head as u64 + size as u64) as *mut u8;
         allocator.head
     }

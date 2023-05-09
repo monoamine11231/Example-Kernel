@@ -24,6 +24,7 @@ use core::fmt::Write;
 use bord::*;
 use drivers::ide::IDE;
 use drivers::pci::pci_device_search_by_class_subclass;
+use graph::font_writer::FontWriter;
 use graph::surface::Surface;
 use graph::utils::{ColorCode, CustomColor};
 pub mod fat32;
@@ -139,10 +140,18 @@ pub fn test_graphics_lib() {
     qemu_println("Test!");
     let mut writer = planar_writer::VgaPlanarWriter::new();
 
-    //writer.write_pixel_2(0, 0, ColorCode::Blue);
+    let mut font_writer = FontWriter::new(font_data::BASIC_FONT);
+    font_writer.set_cursor_pos(Vec2::<usize>::new(200, 200));
+    font_writer.load_char_surface('A', ColorCode::Green, None);
+    font_writer.load_char_surface('B', ColorCode::Green, None);
+    font_writer.load_char_surface('C', ColorCode::Green, None);
+    font_writer.load_char_surface('D', ColorCode::Green, None);
+    font_writer.load_char_surface('E', ColorCode::Green, None);
+    font_writer.load_char_surface('F', ColorCode::Green, None);
+    //font_writer.load_text_color(ColorCode::Green, None);
 
-    let mut A = Surface::from_font('A', font_data::BASIC_FONT, ColorCode::White, None);
-    A.set_origin(Vec2::<usize>::new(100, 100));
+    //let mut A = Surface::from_font('A', font_data::BASIC_FONT, ColorCode::White, None);
+    //A.set_origin(Vec2::<usize>::new(100, 100));
 
     let mut counter = 0;
     loop {
@@ -154,7 +163,12 @@ pub fn test_graphics_lib() {
             //writer.fill_screen(ColorCode::Gray);
         }
 
-        writer.write_surface(&A);
+        font_writer.write_char(&mut writer, 'A', ColorCode::Green);
+        font_writer.write_char(&mut writer, 'B', ColorCode::Green);
+        font_writer.write_char(&mut writer, 'C', ColorCode::Green);
+        font_writer.write_char(&mut writer, 'D', ColorCode::Green);
+        font_writer.write_char(&mut writer, 'E', ColorCode::Green);
+        font_writer.write_char(&mut writer, 'F', ColorCode::Green);
 
         writer.present(counter);
         counter += 1;
