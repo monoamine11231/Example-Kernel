@@ -21,8 +21,11 @@ mod test_funcs;
 mod audio_system;
 mod heap;
 mod time;
+mod misc;
+
 use core::arch::asm;
 use time::Timer;
+use misc::rand;
 use core::fmt::Write;
 use core::str::Bytes;
 
@@ -119,7 +122,14 @@ pub extern "C" fn _start() -> ! {
         time::TIMER.init();
     }
 
+    while true {
+        i += 1;
+        println!("{}", i as u8);
+        if i > 256 {break;}
+    }
+
     loop {}
+
 }
 
 lazy_static! {

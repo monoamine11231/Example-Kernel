@@ -17,7 +17,7 @@ const DIVISOR: u16 = 1193;  // == 1193181 / 1000 hz
 
 pub static mut MILLIS: u64 = 0;
 pub static mut TIMER: Timer = Timer {
-    max: 5000,
+    max: 500,
     cur: 0,
     func: &say_hi,
     active: false
@@ -40,6 +40,11 @@ pub fn init() {
 
     outb(0x21, inb(0x21) & 0xFE);  // chat gippity, i have no idea wtf this does
                                                     // however very ugly panic if this line is omitted
+}
+
+#[inline]
+pub fn get_millis() -> u64 {
+    unsafe {MILLIS}
 }
 
 // yeah this rust syntax makes me want to vomit
@@ -72,7 +77,7 @@ impl<'a> Timer<'a> {
             self.cur += 1;
             if self.cur >= self.max {
                 (self.func)();
-                self.active = false;
+                // self.active = false;
             }
         }
     }
@@ -80,7 +85,8 @@ impl<'a> Timer<'a> {
 }
 
 pub fn say_hi() {
-    qemu_println!("Hello from the timer!");
+    println!("A random number between 1 and 100: {}", unsafe {crate::misc::rand::RNG.normalized_f64()});
+    unsafe {TIMER.init();}
 }
 
 
