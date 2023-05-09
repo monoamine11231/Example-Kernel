@@ -1,6 +1,7 @@
 use core::arch::asm;
 
 use crate::tooling::serial::{inb, outb};
+use crate::qemu_println;
 
 const PIC1_CMD: u16 = 0x20;
 const PIC1_DATA: u16 = 0x21;
@@ -35,7 +36,7 @@ pub fn init() {
 fn pic_remap(offset1: u8, offset2: u8) {
     let a = inb(PIC1_DATA);
     let b = inb(PIC2_DATA);
-
+    qemu_println!("pic_a = {}, pic_a = {}", a, b);
     outb(PIC1_CMD, ICW1_INIT | ICW1_ICW4);
     outb(PIC2_CMD, ICW1_INIT | ICW1_ICW4);
 

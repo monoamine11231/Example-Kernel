@@ -9,6 +9,7 @@ use crate::tooling::serial::*;
 //
 pub struct Notes;
 
+#[allow(non_upper_case_globals)]
 impl Notes {
     pub const C: f64 = 16.35;
     pub const Db: f64 = 17.32;
@@ -29,7 +30,8 @@ pub const SEMITONE_MULTIPLIER: f64 = 1.05946309436;
 
 // inlining this might be a mistake, lets see
 #[inline(always)]
-fn note(_note: f64, octave: u8) -> u32 {
+pub fn note(_note: f64, octave: u8) -> u32 {
+    let res = 
     (_note * 
     match octave {
         0 => 1,
@@ -42,10 +44,12 @@ fn note(_note: f64, octave: u8) -> u32 {
         7 => 128,
         8 => 256,
         _ => panic!("attempted to play note with too high frequency (octave = {})", octave)
-    } as f64 ) as u32
+    } as f64 ) as u32;
+    println!("{}", res);
+    res
 }
 
-// part of (basically all of the useful code) is inspired by the os dev article on the pc speaker
+
 #[repr(C, packed)]
 struct AudioPlayer {
     bits: &'static mut [u8],
@@ -54,22 +58,22 @@ struct AudioPlayer {
 }
 
 impl AudioPlayer {
-    // (this might be haram)
     // play one byte of audio
-    #[inline(always)]
     fn play_sound(&self) {
         {}
     }
 }
-
+// part of (basically all of the useful code) takes "inspiration" from the os dev article on the pc speaker
 // this will play the sound forever
 pub fn play(frequency: u32) {
-    let Div = 1193180 / frequency;
+    let divisor = 1193180 / frequency;
     let tmp: u8;
 
     outb(0x43, 0xb6);
-    outb(0x42, Div as u8);
-    outb(0x42, (Div >> 8) as u8);
+    outb(0x42, divisor as u8);
+    outb(0x42, (divisor >> 8) as u8);
+    //outw(0x42, divisor as u16);
+    qemu_println!("{} {} {}", divisor as u8, (divisor >> 8) as u8, divisor);
 
     tmp = inb(0x61);
     if tmp != (tmp | 3) {
@@ -101,4 +105,4 @@ pub fn sweep(start: i32, end: i32, delay: u64) {
     stop();
 }
 
-
+pub fn pit_test() {}

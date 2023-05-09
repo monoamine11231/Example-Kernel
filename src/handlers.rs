@@ -1,4 +1,5 @@
 use core::panic::PanicInfo;
+use crate::{time, qemu_print};
 
 use crate::tooling::{
     self,
@@ -6,6 +7,8 @@ use crate::tooling::{
     serial::{inb, outb},
     vga::write_str_at,
 };
+
+static mut TIME_ELAPSED: u64 = 0;
 
 pub extern "x86-interrupt" fn page_fault(isf: InterruptStackFrame) {
     write_str_at("err: page fault", 4, 0, 0xde)
@@ -55,9 +58,17 @@ macro_rules! mystery_handler {
 
 pub extern "x86-interrupt" fn handler1_wtf(isf: InterruptStackFrame) {
     // wrong args i think
-
+    unsafe {
+        time::MILLIS += 1;
+        if time::MILLIS == 1000 {
+            time::MILLIS = 0;
+            TIME_ELAPSED += 1;
+            qemu_print!("a second passed! ({})\n", TIME_ELAPSED);
+        }
+    }
     outb(0xA0, 0x20);
     outb(0x20, 0x20);
+    
 }
 
 #[macro_export]

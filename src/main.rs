@@ -14,10 +14,13 @@ mod drivers;
 mod handlers;
 pub mod mem;
 mod pic;
+mod acpi;
 mod tooling;
 mod format;
 mod test_funcs;
 mod audio_system;
+mod heap;
+mod time;
 use core::arch::asm;
 use core::fmt::Write;
 use core::str::Bytes;
@@ -29,11 +32,12 @@ use heapless::String;
 use mem::memory::{self, *};
 use tooling::qemu_io::{qemu_print_hex, qemu_println};
 use tooling::vga::write_str_at;
+use tooling::serial::*;
 use core::borrow::BorrowMut;
 use audio_system::audio;
-
 use crate::tooling::vga::VGAWriter;
 pub const FORMAT_STRING_SIZE: usize = 256;
+
 static mut WRITER: VGAWriter = VGAWriter {
     buffer: &mut [0],
     idx: 0,
@@ -47,13 +51,14 @@ use crate::handlers::*;
 pub extern "C" fn _start() -> ! {
     unsafe { WRITER = VGAWriter::new(); }
     let mut i = 0;
+    qemu_println!("0x40: {:b}\n0x41: {:b}\n0x42: {:b}", inb(0x40), inb(0x41), inb(0x42));
 
     load_idt(&IDTX);
     pic::init();
+    time::init();
     test_funcs::rainbow_print("Hello world!!");
     memory::init();
-    pic::init();
-    audio::sweep(20, 1000, 1000);
+    // audio::play(audio::note(audio::Notes::A, 4)); // play A4 (440 Hz) (at super high volume -.-)
 
     let buf: [u8; 10] = [0x10u8; 10];
 
@@ -88,14 +93,26 @@ pub extern "C" fn _start() -> ! {
 
     //qemu_print_hex(a);
 
-    write_str_at("Hello World!", 0, 0, 0xb);
-
     // unsafe {
     //     asm!(
     //         "div {0:e}",
     //         in(reg) 0,
     //     )
     // }
+
+    /*let mut my_vector: alloc::vec::Vec<u8> = alloc::vec::Vec::new();
+    let mut i = 0u8;
+    while true {
+        i = i.wrapping_add(1);
+        my_vector.push(i);
+        qemu_println!("{:?}", &my_vector);
+    }
+    */
+    qemu_println!("0x40: 0x{:X}\n0x41: 0x{:X}\n0x42: 0x{:X}", inb(0x40), inb(0x41), inb(0x42));
+    let mut ptr = 0x20 as *mut u128;
+    /* while ((ptr as usize) < 0x200) {
+        unsafe {*ptr = 0; ptr = ptr.offset(1);}
+    } */
 
     loop {}
 }
