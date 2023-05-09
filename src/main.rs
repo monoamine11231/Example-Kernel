@@ -56,18 +56,15 @@ pub extern "C" fn _start() -> ! {
     memory::init();
     pic::init();
 
-    test_graphics_lib();
-
     let buf: [u8; 10] = [0x10u8; 10];
 
     let mut ide_processor: IDE = Default::default();
     ide_processor.init();
     let mut fs_processor = fat32::FAT32::new(&mut ide_processor).unwrap();
 
-    /*
     let mut buf: [u8; 64] = [0x00u8; 64];
-    fs_processor.read_file("KEK/ABA/LOL3.TXT", &mut buf, 420);
-    fs_processor.delete_directory("KEK/ABA").unwrap();
+    //fs_processor.read_file("KEK/ABA/LOL3.TXT", &mut buf, 420);
+    //fs_processor.delete_directory("KEK/ABA").unwrap();
     fs_processor.create_file("KEK", "A.TXT").unwrap();
     fs_processor.create_directory("", "UUU").unwrap();
     fs_processor.create_directory("UUU", "OOO").unwrap();
@@ -91,10 +88,8 @@ pub extern "C" fn _start() -> ! {
 
     /* From reading a file */
     qemu_println(unsafe { core::str::from_utf8_unchecked(&buf) });
-
+    test_graphics_lib();
     //qemu_print_hex(a);
-
-    */
 
     // unsafe {
     //     asm!(
@@ -141,13 +136,9 @@ pub fn test_graphics_lib() {
     let mut writer = planar_writer::VgaPlanarWriter::new();
 
     let mut font_writer = FontWriter::new(font_data::BASIC_FONT);
+    font_writer.load_text_color(ColorCode::Green, Some(ColorCode::Black));
     font_writer.set_cursor_pos(Vec2::<usize>::new(200, 200));
-    font_writer.load_char_surface('A', ColorCode::Green, None);
-    font_writer.load_char_surface('B', ColorCode::Green, None);
-    font_writer.load_char_surface('C', ColorCode::Green, None);
-    font_writer.load_char_surface('D', ColorCode::Green, None);
-    font_writer.load_char_surface('E', ColorCode::Green, None);
-    font_writer.load_char_surface('F', ColorCode::Green, None);
+    font_writer.set_box_size(Vec2::<usize>::new(50, 100));
     //font_writer.load_text_color(ColorCode::Green, None);
 
     //let mut A = Surface::from_font('A', font_data::BASIC_FONT, ColorCode::White, None);
@@ -163,16 +154,14 @@ pub fn test_graphics_lib() {
             //writer.fill_screen(ColorCode::Gray);
         }
 
-        font_writer.write_char(&mut writer, 'A', ColorCode::Green);
-        font_writer.write_char(&mut writer, 'B', ColorCode::Green);
-        font_writer.write_char(&mut writer, 'C', ColorCode::Green);
-        font_writer.write_char(&mut writer, 'D', ColorCode::Green);
-        font_writer.write_char(&mut writer, 'E', ColorCode::Green);
-        font_writer.write_char(&mut writer, 'F', ColorCode::Green);
+        font_writer.write_and_retrace(&mut writer, "+++++++++++++++", ColorCode::Green);
+
+        let cursor_pos = font_writer.get_cursor_pos();
+        cursor_pos.print();
 
         writer.present(counter);
         counter += 1;
-        //wait(100000000);
+        wait(100000000);
     }
 
     //writer.color_test();

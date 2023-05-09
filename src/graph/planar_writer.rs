@@ -39,9 +39,9 @@ impl VgaPlanarWriter {
     const BIT_MAPPING: [u8; 8] = [0x80, 0x40, 0x20, 0x10, 0x8, 0x4, 0x2, 0x1];
 
     //Resolution stuff
-    const SCAN_LN_SZ: usize = 80;
-    const SCAN_LN_CNT: usize = 480;
-    const COL_CNT: usize = 640;
+    pub const SCAN_LN_SZ: usize = 80;
+    pub const SCAN_LN_CNT: usize = 480;
+    pub const COL_CNT: usize = 640;
 
     //Video memory adress
     const VIDEO_MEM_BASE: *mut u8 = 0xA0000 as *mut u8;
@@ -196,6 +196,7 @@ impl VgaPlanarWriter {
         }
     }
 
+    //The surface origin depicts the upper left corner of the image
     pub fn write_surface(&mut self, surface: &Surface) {
         let surface_offset = surface.get_origin();
         let should_ignore = surface.get_ignore_color();

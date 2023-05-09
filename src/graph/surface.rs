@@ -43,7 +43,6 @@ impl Surface {
         color: ColorCode,
         _background_color: Option<ColorCode>,
     ) -> Self {
-        qemu_print("Creating char surface...\n");
         let mut new_surface = Surface {
             width: font.font_width as usize,
             height: font.font_height as usize,
@@ -60,8 +59,6 @@ impl Surface {
         }
 
         let font_map_idx = font_data::get_font_entry(c);
-        qemu_fmt_println("{}", format_args!("Found map idx: {}", font_map_idx));
-
         //Iterating over every bit in 24 bytes
         for i in 0..24 {
             for j in 0..8 {
@@ -78,7 +75,6 @@ impl Surface {
                 }
             }
         }
-        qemu_print("Returning created char surface!\n");
         return new_surface;
     }
 

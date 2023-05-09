@@ -1,7 +1,9 @@
+use core::fmt::Write;
 use core::ops;
 use core::ops::{Add, Mul, Sub};
 
 use crate::math::utils::*;
+use crate::tooling::qemu_io::*;
 
 #[derive(Copy, Clone)]
 pub struct Vec2<T> {
@@ -135,3 +137,11 @@ impl ops::Mul<usize> for Vec2<usize> {
         };
     }
 }
+
+impl Vec2<usize> {
+    pub fn print(&self) {
+        qemu_fmt_println("{}", format_args!("Vec2: ({}, {})", self.x, self.y));
+    }
+}
+
+impl Vec2<usize> {}
