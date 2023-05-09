@@ -61,7 +61,8 @@ pub extern "C" fn _start() -> ! {
     pic::init();
 
     unsafe {
-        KEYBOARD.set_callback(key_event as fn(i32));
+        // callback 0-4
+        KEYBOARD.set_callback0(key_event as fn(i32));
     }
 
     let buf: [u8; 10] = [0x10u8; 10];
