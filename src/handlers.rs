@@ -1,3 +1,4 @@
+use crate::input::keyboard::KEYBOARD;
 use core::panic::PanicInfo;
 
 use crate::tooling::{
@@ -27,7 +28,10 @@ pub extern "x86-interrupt" fn keyboard_handler(isf: InterruptStackFrame) {
     // wrong args i think
 
     let scancode = inb(0x60);
-    qemu_print_hex(scancode as u32);
+    unsafe {
+        KEYBOARD.handle_key(scancode as i32);
+    }
+    // qemu_print_hex(scancode as u32);
 
     outb(0xA0, 0x20);
     outb(0x20, 0x20);

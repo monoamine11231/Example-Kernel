@@ -21,6 +21,10 @@ mod utils;
 use core::arch::asm;
 use core::fmt::Write;
 
+pub mod input;
+use input::key_codes::KeyPressedCodes;
+use input::keyboard::KEYBOARD;
+
 use bord::*;
 use drivers::ide::IDE;
 use drivers::pci::pci_device_search_by_class_subclass;
@@ -55,6 +59,10 @@ pub extern "C" fn _start() -> ! {
 
     memory::init();
     pic::init();
+
+    unsafe {
+        KEYBOARD.set_callback(key_event as fn(i32));
+    }
 
     let buf: [u8; 10] = [0x10u8; 10];
 
@@ -99,6 +107,18 @@ pub extern "C" fn _start() -> ! {
     // }
 
     loop {}
+}
+
+pub fn key_event(key: i32) {
+    if key == KeyPressedCodes::A as i32 {
+        qemu_println("A");
+    }
+    if key == KeyPressedCodes::B as i32 {
+        qemu_println("B");
+    }
+    if key == KeyPressedCodes::C as i32 {
+        qemu_println("C");
+    }
 }
 
 pub fn get_rsp() -> *mut u64 {
