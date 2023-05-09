@@ -22,6 +22,7 @@ mod audio_system;
 mod heap;
 mod time;
 use core::arch::asm;
+use time::Timer;
 use core::fmt::Write;
 use core::str::Bytes;
 
@@ -113,6 +114,10 @@ pub extern "C" fn _start() -> ! {
     /* while ((ptr as usize) < 0x200) {
         unsafe {*ptr = 0; ptr = ptr.offset(1);}
     } */
+
+    unsafe {
+        time::TIMER.init();
+    }
 
     loop {}
 }

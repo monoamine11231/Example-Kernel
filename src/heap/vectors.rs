@@ -10,15 +10,15 @@ pub struct Vec<T> {
 
 impl<T> Vec<T> {
 
-    pub fn new() -> Self {
+    pub fn new<T>() -> Self {
         if size_of::<T>() != 0 {
-            Vec<T> {
+            Vec {
                 pointer: kalloc(80 * size_of::<T>()) as *mut T,
                 length: 0,
                 capacity: 80 * size_of::<T>()
             }
         } else {
-            Vec::<T> {
+            Vec {
                 pointer: kalloc(0) as *mut T,
                 length: usize::MAX,
                 capacity: 0
@@ -37,7 +37,8 @@ impl<T> Vec<T> {
 
 // slight help from chat gippity since the rust docs werent helpful
 // this is to enable indexing through the vector obviously
-impl<T, Idx> core::ops::Index<Idx> for Vec<T> {
+impl<T, Idx> core::ops::Index<Idx> for Vec<T> 
+where Idx: {
     type Output = T;
 
     fn index(&self, index: Idx) -> &T {

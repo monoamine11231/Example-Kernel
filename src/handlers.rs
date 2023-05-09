@@ -60,6 +60,7 @@ pub extern "x86-interrupt" fn handler1_wtf(isf: InterruptStackFrame) {
     // wrong args i think
     unsafe {
         time::MILLIS += 1;
+        time::TIMER.tick();
         if time::MILLIS == 1000 {
             time::MILLIS = 0;
             TIME_ELAPSED += 1;

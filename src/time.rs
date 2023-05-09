@@ -13,17 +13,23 @@ hopefully it will be
 */
 use crate::tooling::serial::*;
 
-const DIVISOR: u16 = 1193;  // == 1193182 / 1000 hz
+const DIVISOR: u16 = 1193;  // == 1193181 / 1000 hz
 
 pub static mut MILLIS: u64 = 0;
-pub static mut TIMERS: [u64; 4] = [0, 0, 0, 0];
+pub static mut TIMER: Timer = Timer {
+    max: 5000,
+    cur: 0,
+    func: &say_hi,
+    active: false
+};
 
 #[repr(C)]
-pub struct Timer<'a, A, R>
-{
+#[derive(Clone)]
+pub struct Timer<'a> {
     max: u64,
     cur: u64,
-    func: &'a dyn Fn(A) -> R
+    func: &'a dyn Fn(),
+    active: bool
 }
 
 // set the PIT to 1000 interrupts/sec, instead of the default 18
@@ -37,18 +43,44 @@ pub fn init() {
 }
 
 // yeah this rust syntax makes me want to vomit
-// but basically you can pass a fn into Timer with its args, and it will be executed when the timer is done
-impl<'a, A, R> Timer<'a, A, R> {
+// but basically you can pass a fn into Timer and it will be executed when the timer is done
+// only empty void functions are supported atm, hopefully somebody who knows rust can add params and return value (wrapped in Option?)
+impl<'a> Timer<'a> {
 
-    fn new(time: u64, function: &'a dyn Fn(A) -> R) -> Self
-    {
+    pub fn new(time: u64, function: &'a dyn Fn()) -> Self {
         Timer {
             max: time,
             cur: 0,
-            func: function
+            func: function,
+            active: false
         }
     }
 
+    // (re)start the timer
+    pub fn init(&mut self) {
+        self.active = true;
+        self.cur = 0;
+    }
+
+    // stop the timer
+    pub fn stop(&mut self) {
+        self.active = false;
+    }
+
+    pub fn tick(&mut self){
+        if self.active {
+            self.cur += 1;
+            if self.cur >= self.max {
+                (self.func)();
+                self.active = false;
+            }
+        }
+    }
+
+}
+
+pub fn say_hi() {
+    qemu_println!("Hello from the timer!");
 }
 
 
