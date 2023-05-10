@@ -1,6 +1,6 @@
 use crate::tooling::qemu_io::{qemu_println, qemu_print_hex};
 
-use super::pci::{pci_device_search_by_class_subclass, pci_get_header_type, pci_get_header_0x00, pci_get_bar_address, pci_get_header_0x01};
+use super::pci::{pci_device_search_by_class_subclass, pci_get_header_type, pci_get_header_0x00, pci_get_bar_address, pci_get_header_0x01, pci_read_u8, pci_write_u8};
 
 pub struct AC97 {}
 
@@ -16,6 +16,12 @@ impl AC97 {
     
         let mut bar0: u16 = 0x00;
         let mut bar1: u16 = 0x00;
+
+        let control_reg: u8 = pci_read_u8(bus, slot, function, 0x04);
+        qemu_println("AAAA:::++");
+        qemu_print_hex(control_reg as u32);
+        pci_write_u8(bus, slot, function, 0x04, control_reg | 0x05);
+        qemu_print_hex(pci_read_u8(bus, slot, function, 0x04) as u32);
 
         match header_type {
             0x00 => {
@@ -34,6 +40,8 @@ impl AC97 {
                 return Err("Wrong header type for AC97")
             }
         }
+
+
 
         Ok(())
     }

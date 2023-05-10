@@ -1,6 +1,6 @@
 use crate::tooling::{
     qemu_io::qemu_print_hex,
-    serial::{ind, outd},
+    serial::{ind, outd, outb},
 };
 
 /* Header structs for PCI devices */
@@ -166,6 +166,22 @@ pub fn pci_read_u16(bus: u8, slot: u8, function: u8, offset: u8) -> u16 {
 pub fn pci_read_u8(bus: u8, slot: u8, function: u8, offset: u8) -> u8 {
     let in_raw: u16 = pci_read_u16(bus, slot, function, offset);
     return (in_raw >> ((offset & 0x01) * 8) & 0xFF) as u8;
+}
+
+pub fn pci_write_u8(bus: u8, slot: u8, function: u8, offset: u8, data: u8) {
+    let base_addr: u32 = 1 << 31; /* Enable bit (bit 31) */
+
+    let mut final_addr: u32 = base_addr;
+
+    final_addr |= (bus as u32) << 16; /* Bus number (bits 23-16) */
+    final_addr |= ((slot as u32) & 0x1f) << 11; /* Device number (bits 15-11) */
+    final_addr |= ((function as u32) & 0x03) << 8; /* Function number (bits 10-8) */
+    final_addr |= (offset as u32) & 0xFF; /* Register offset (bits 7-0) */
+
+    outd(0xCF8, final_addr);
+
+    /* Write to offset */
+    outb(0xCFC, data);
 }
 
 /* Some important fields extracting functions */

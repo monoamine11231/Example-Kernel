@@ -59,7 +59,7 @@ pub const FORMAT_STRING_SIZE: usize = 256;
 
 // "options"
 const use_fs: bool = false;
-const do_graphics_test: bool = true;
+const do_graphics_test: bool = false;
 
 
 #[no_mangle]
@@ -76,7 +76,7 @@ pub extern "C" fn _start() -> ! {
     let mut rng = misc::rand::Rng::new();
 
     let mut audio_processor: AC97 = AC97::new();
-    audio_processor.init();
+    audio_processor.init().unwrap();
 
     unsafe {
         // callback 0-4
@@ -95,14 +95,6 @@ pub extern "C" fn _start() -> ! {
     if do_graphics_test {
         test_graphics_lib();
     }
-    //qemu_print_hex(a);
-
-    // unsafe {
-    //     asm!(
-    //         "div {0:e}",
-    //         in(reg) 0,
-    //     )
-    // }
 
     loop {}
 }
