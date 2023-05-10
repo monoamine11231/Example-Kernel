@@ -371,6 +371,23 @@ impl<'a> FAT32<'a> {
         })
     }
 
+    /// Returns the file size of the file at the given path. Using this function on
+    /// directories will result in an error!!!
+    pub fn get_file_size(&mut self, path: &str) -> Result<u32, &'static str> {
+        let packed: Option<(DirectoryEntry, u32, u64)> = self.traverse(path)?;
+        if packed.is_none() {
+            return Err("File was not found!");
+        }
+
+        let unpacked: (DirectoryEntry, u32, u64) = packed.unwrap();
+        let entry: DirectoryEntry = unpacked.0;
+        if entry.file_attribute == 0x10 {
+            return Err("File is a directory!");
+        }
+
+        Ok(entry.file_size)
+    }
+
     /// Reads file to buffer
     /// `path` path to file to read
     /// `to` buffer to place read data
