@@ -9,7 +9,6 @@ macro_rules! format {
     ($string:expr, $($arg:tt)*) => {{
         use heapless::String;
         use core::fmt::Write;
-        use crate::WRITER;
         
         let mut formatted_string = String::<{crate::FORMAT_STRING_SIZE}>::new();
         write!(&mut formatted_string, $string, $($arg)*).unwrap();
@@ -27,7 +26,6 @@ macro_rules! qemu_print {
     ($string:expr, $($arg:tt)*) => {{
         use heapless::String;
         use core::fmt::Write;
-        use crate::WRITER;
         
         let mut formatted_string = String::<{crate::FORMAT_STRING_SIZE}>::new();
         write!(&mut formatted_string, $string, $($arg)*).unwrap();
@@ -45,7 +43,6 @@ macro_rules! qemu_println {
     ($string:expr) => {{
         use heapless::String;
         use core::fmt::Write;
-        use crate::WRITER;
         
         let mut formatted_string = String::<{crate::FORMAT_STRING_SIZE}>::new();
         write!(&mut formatted_string, $string).unwrap();
@@ -56,8 +53,7 @@ macro_rules! qemu_println {
     ($string:expr, $($arg:tt)*) => {{
         use heapless::String;
         use core::fmt::Write;
-        use crate::WRITER;
-        
+
         let mut formatted_string = String::<{crate::FORMAT_STRING_SIZE}>::new();
         write!(&mut formatted_string, $string, $($arg)*).unwrap();
         formatted_string.push('\n');
@@ -68,13 +64,13 @@ macro_rules! qemu_println {
 macro_rules! print {
     // only a string literal
     ($string:expr) => {{
-        unsafe {
+        /* unsafe {
             WRITER.write_str($string);
-        }
+        } */
     }};
     // a string literal w/ args
     ($string:expr, $($arg:tt)*) => {{
-        use heapless::String;
+        /* use heapless::String;
         use core::fmt::Write;
         use crate::WRITER;
         
@@ -82,7 +78,7 @@ macro_rules! print {
         write!(&mut formatted_string, $string, $($arg)*).unwrap();
         unsafe { 
             WRITER.write_str(&formatted_string);
-        }
+        } */
     }};
 }
 
@@ -90,23 +86,23 @@ macro_rules! print {
 macro_rules! println {
     // no args
     () => {{
-        unsafe {
+        /* unsafe {
             WRITER.newline();
-        }
+        } */
     }};
     // only a string literal
     ($string:expr) => {{
-        unsafe {
+        /* unsafe {
             use core::fmt::Write;
             use crate::WRITER;
             
             WRITER.write_str($string);
             WRITER.newline();
-        }
+        } */
     }};
     // a string literal w/ args
     ($string:expr, $($arg:tt)*) => {{
-        use heapless::String;
+        /* use heapless::String;
         use core::fmt::Write;
         use crate::WRITER;
         
@@ -115,7 +111,7 @@ macro_rules! println {
         unsafe { 
             WRITER.write_str(&formatted_string);
             WRITER.newline(); 
-        }
+        } */
     }};
 }
 

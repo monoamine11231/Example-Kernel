@@ -99,8 +99,8 @@ impl VGAWriter {
     fn shift_up(&mut self, lines: usize) {
         let len = 160 * lines;
         let mut result: [u8; 4000] = [0; 4000];
-        result[..(4000 - len)].copy_from_slice(&self.buffer[len..4000]);
-        self.buffer.copy_from_slice(&result);
+    //    result[..(4000 - len)].copy_from_slice(&self.buffer[len..4000]);
+    //    self.buffer.copy_from_slice(&result);
 
         
     }
