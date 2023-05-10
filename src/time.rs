@@ -16,6 +16,7 @@ use crate::heap::vectors::*;
 const DIVISOR: u16 = 1193; // == 1193181 / 1000 hz
 
 pub static mut MILLIS: u64 = 0;
+pub static mut MILLIS_TOTAL: u64 = 0;
 pub static mut TIMER: Timer = Timer {
     max: 500,
     cur: 0,
@@ -46,7 +47,7 @@ pub fn init() {
 
 #[inline]
 pub fn get_millis() -> u64 {
-    unsafe { MILLIS }
+    unsafe { MILLIS_TOTAL }
 }
 
 // yeah this rust syntax makes me want to vomit

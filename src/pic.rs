@@ -36,7 +36,6 @@ pub fn init() {
 fn pic_remap(offset1: u8, offset2: u8) {
     let a = inb(PIC1_DATA);
     let b = inb(PIC2_DATA);
-    qemu_println!("pic_a = {}, pic_a = {}", a, b);
     outb(PIC1_CMD, ICW1_INIT | ICW1_ICW4);
     outb(PIC2_CMD, ICW1_INIT | ICW1_ICW4);
 

@@ -58,13 +58,12 @@ pub const FORMAT_STRING_SIZE: usize = 256;
 
 // "options"
 const use_fs: bool = false;
-const do_graphics_test: bool = false;
+const do_graphics_test: bool = true;
 
 
 #[no_mangle]
 #[link_section = ".start"]
 pub extern "C" fn _start() -> ! {
-    time::init();
     load_idt(&IDTX);
 
     let my_root = math::utils::sqrt(5.0);
@@ -72,6 +71,8 @@ pub extern "C" fn _start() -> ! {
 
     memory::init();
     pic::init();
+    time::init();
+    let mut rng = misc::rand::Rng::new();
 
     unsafe {
         // callback 0-4
@@ -80,12 +81,12 @@ pub extern "C" fn _start() -> ! {
 
     let buf: [u8; 10] = [0x10u8; 10];
 
-    let mut ide_processor: IDE = Default::default();
-    ide_processor.init();
-    let mut fs_processor = fat32::FAT32::new(&mut ide_processor).unwrap();
-
     let mut buf: [u8; 64] = [0x00u8; 64];
     if use_fs {
+        let mut ide_processor: IDE = Default::default();
+        ide_processor.init();
+        let mut fs_processor = fat32::FAT32::new(&mut ide_processor).unwrap();
+        let mut fs_processor = fat32::FAT32::new(&mut ide_processor).unwrap();
         //fs_processor.read_file("KEK/ABA/LOL3.TXT", &mut buf, 420);
         //fs_processor.delete_directory("KEK/ABA").unwrap();
         fs_processor.create_file("KEK", "A.TXT").unwrap();
@@ -136,6 +137,16 @@ pub fn key_event(key: i32) {
     }
     if key == KeyPressedCodes::C as i32 {
         qemu_println("C");
+    }
+    if key == KeyPressedCodes::T as i32 {
+        qemu_println!("time since system start: {}.{:03}s",
+        time::get_millis() / 1000,
+        time::get_millis() % 1000 
+    )
+    }
+    if key == KeyPressedCodes::R as i32 {
+        let mut rng = crate::misc::rand::Rng::new();
+        qemu_println!("random u32: {:010}", rng.u32())
     }
 }
 
