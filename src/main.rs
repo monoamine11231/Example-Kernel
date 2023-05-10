@@ -59,7 +59,7 @@ pub const FORMAT_STRING_SIZE: usize = 256;
 
 // "options"
 const use_fs: bool = false;
-const do_graphics_test: bool = false;
+const do_graphics_test: bool = true;
 
 
 #[no_mangle]
@@ -175,6 +175,8 @@ pub fn test_graphics_lib() {
         }
 
         font_writer.write_and_retrace(&mut writer, "+++++++++++++++", ColorCode::Green);
+        writer.write_line(Vec2::<usize>::new(300,100),Vec2::<usize>::new(304,200) , ColorCode::BrightGreen);
+
 
         let cursor_pos = font_writer.get_cursor_pos();
         cursor_pos.print();
@@ -183,7 +185,7 @@ pub fn test_graphics_lib() {
         counter += 1;
         wait(100000000);
     }
-
+    
     //writer.color_test();
     //writer.print_plane(1);
 }

@@ -20,3 +20,10 @@ pub fn sqrt(x: f32) -> f32 {
     }
     return x;
 }
+
+pub fn float_ceil(a : f32) -> usize{
+    return (a + 0.5) as usize;
+}
+pub fn float_floor(a : f32) -> usize{
+    return (a - 0.5) as usize;
+}
