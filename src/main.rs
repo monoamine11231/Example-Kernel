@@ -83,7 +83,7 @@ pub extern "C" fn _start() -> ! {
 
     let mut buf: [u8; 64] = [0x00u8; 64];
     if use_fs {
-        let mut ide_processor: IDE = Default::default();
+        let mut ide_processor: IDE = IDE::new();
         ide_processor.init();
         let mut fs_processor = fat32::FAT32::new(&mut ide_processor).unwrap();
         //fs_processor.read_file("KEK/ABA/LOL3.TXT", &mut buf, 420);

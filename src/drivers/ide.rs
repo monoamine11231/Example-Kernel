@@ -235,9 +235,15 @@ pub struct IDE {
     ide_irq_invoked: u8,
 }
 
-/* Rust god forgive me for this sin */
-impl Default for IDE {
-    fn default() -> Self {
+impl IDE {
+    /* Should be replaced later */
+    fn tmp_sleep(&self, channel: ATAChannel, ms: usize) {
+        for i in 0..ms * 10 {
+            IDE::read_chreg(self, channel, ATARegister::ControlORAltStatus);
+        }
+    }
+
+    pub fn new() -> Self {
         Self {
             channels: unsafe { core::mem::zeroed() },
             devices: [
@@ -249,15 +255,6 @@ impl Default for IDE {
 
             ide_buf: unsafe { core::mem::zeroed() },
             ide_irq_invoked: 1,
-        }
-    }
-}
-
-impl IDE {
-    /* Should be replaced later */
-    fn tmp_sleep(&self, channel: ATAChannel, ms: usize) {
-        for i in 0..ms * 10 {
-            IDE::read_chreg(self, channel, ATARegister::ControlORAltStatus);
         }
     }
 

@@ -136,6 +136,7 @@ pub struct PCIDeviceHeader0x02 {
 }
 
 /// Read a DWORD at given bus #, slot #, function # and with a given offset in bytes
+/// which is masked by 0xFC (padded by 0x04)
 pub fn pci_read_u32(bus: u8, slot: u8, function: u8, offset: u8) -> u32 {
     let base_addr: u32 = 1 << 31; /* Enable bit (bit 31) */
 
@@ -152,6 +153,7 @@ pub fn pci_read_u32(bus: u8, slot: u8, function: u8, offset: u8) -> u32 {
 }
 
 /// Read a WORD at given bus #, slot #, function # and with a given offset in bytes
+/// which is masked by 0x02 (padded by 0x02)
 pub fn pci_read_u16(bus: u8, slot: u8, function: u8, offset: u8) -> u16 {
     let in_raw: u32 = pci_read_u32(bus, slot, function, offset);
 
@@ -162,7 +164,8 @@ pub fn pci_read_u16(bus: u8, slot: u8, function: u8, offset: u8) -> u16 {
 
 /// Read a BYTE at given bus #, slot #, function # and with a given offset in bytes
 pub fn pci_read_u8(bus: u8, slot: u8, function: u8, offset: u8) -> u8 {
-    return (pci_read_u16(bus, slot, function, offset) & 0xFF) as u8;
+    let in_raw: u16 = pci_read_u16(bus, slot, function, offset);
+    return (in_raw >> ((offset & 0x01) * 8) & 0xFF) as u8;
 }
 
 /* Some important fields extracting functions */
@@ -212,15 +215,15 @@ pub fn pci_get_common_header(bus: u8, slot: u8, function: u8) -> PCIDeviceCommon
 /// Extracts and returns the PCI device header of type 0x00 as a struct,
 /// at given bus #, slot #, function #. Tests if the header type of the device is valid
 /// and if the device exists at all
-pub fn pci_get_header_0x00(bus: u8, slot: u8, function: u8) -> Result<PCIDeviceHeader0x00, u8> {
+pub fn pci_get_header_0x00(bus: u8, slot: u8, function: u8) -> Result<PCIDeviceHeader0x00, &'static str> {
     if pci_get_vendor_id(bus, slot, function) == 0xFFFF {
         /*Device with unvalid vendor ID was given*/
-        return Err(0x00);
+        return Err("Device with unvalid vendor ID was given");
     }
 
     if pci_get_header_type(bus, slot, function) != 0x00 {
         /*Device with header type of 0x00 was expected*/
-        return Err(0x01);
+        return Err("Device with header type of 0x00 was expected");
     }
 
     let mut header_buffer: [u32; 12] = [0 as u32; 12];
@@ -242,15 +245,15 @@ pub fn pci_get_header_0x00(bus: u8, slot: u8, function: u8) -> Result<PCIDeviceH
 /// Extracts and returns the PCI device header of type 0x01 as a struct,
 /// at given bus #, slot #, function #. Tests if the header type of the device is valid
 /// and if the device exists at all
-pub fn pci_get_header_0x01(bus: u8, slot: u8, function: u8) -> Result<PCIDeviceHeader0x01, u8> {
+pub fn pci_get_header_0x01(bus: u8, slot: u8, function: u8) -> Result<PCIDeviceHeader0x01, &'static str> {
     if pci_get_vendor_id(bus, slot, function) == 0xFFFF {
         /*Device with unvalid vendor ID was given*/
-        return Err(0x00);
+        return Err("Device with unvalid vendor ID was given");
     }
 
     if pci_get_header_type(bus, slot, function) != 0x01 {
         /*Device with header type of 0x01 was expected*/
-        return Err(0x02);
+        return Err("Device with header type of 0x01 was expected");
     }
 
     let mut header_buffer: [u32; 12] = [0 as u32; 12];
@@ -272,15 +275,15 @@ pub fn pci_get_header_0x01(bus: u8, slot: u8, function: u8) -> Result<PCIDeviceH
 /// Extracts and returns the PCI device header of type 0x02 as a struct,
 /// at given bus #, slot #, function #. Tests if the header type of the device is valid
 /// and if the device exists at all
-pub fn pci_get_header_0x02(bus: u8, slot: u8, function: u8) -> Result<PCIDeviceHeader0x02, u8> {
+pub fn pci_get_header_0x02(bus: u8, slot: u8, function: u8) -> Result<PCIDeviceHeader0x02, &'static str> {
     if pci_get_vendor_id(bus, slot, function) == 0xFFFF {
         /*Device with unvalid vendor ID was given*/
-        return Err(0x00);
+        return Err("Device with unvalid vendor ID was given");
     }
 
     if pci_get_header_type(bus, slot, function) != 0x02 {
         /*Device with header type of 0x02 was expected*/
-        return Err(0x03);
+        return Err("Device with header type of 0x02 was expected");
     }
 
     let mut header_buffer: [u32; 14] = [0 as u32; 14];
@@ -314,7 +317,7 @@ pub fn pci_get_bar_address(bar: u32) -> u32 {
 /// Returns the bus #, slot # and function # in a triple when found a device with the
 /// given class code. If such device was not found, returns (0xFF, 0xFF, 0xFF) as a
 /// signifier. This function brute forces through all bus lanes and slots.
-pub fn pci_device_search_by_class_subclass(class: u8, subclass: u8) -> Result<(u8, u8, u8), u8> {
+pub fn pci_device_search_by_class_subclass(class: u8, subclass: u8) -> Result<(u8, u8, u8), &'static str> {
     /* Iteration not working :/ */
     for bus in 0u8..=255u8 {
         for slot in 0u8..32u8 {
@@ -351,5 +354,5 @@ pub fn pci_device_search_by_class_subclass(class: u8, subclass: u8) -> Result<(u
     }
 
     /* If iterated through all the devices and not found */
-    Err(0x00)
+    Err("Device was not found")
 }
