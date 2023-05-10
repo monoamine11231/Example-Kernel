@@ -27,12 +27,13 @@ use core::arch::asm;
 use core::fmt::Write;
 
 pub mod input;
+use fat32::test_filesystem;
 use input::key_codes::KeyPressedCodes;
 use input::keyboard::KEYBOARD;
 
 use bord::*;
 use drivers::ide::IDE;
-use drivers::pci::pci_device_search_by_class_subclass;
+use drivers::ac97::AC97;
 use graph::font_writer::FontWriter;
 use graph::surface::Surface;
 use graph::utils::{ColorCode, CustomColor};
@@ -74,6 +75,9 @@ pub extern "C" fn _start() -> ! {
     time::init();
     let mut rng = misc::rand::Rng::new();
 
+    let mut audio_processor: AC97 = AC97::new();
+    audio_processor.init();
+
     unsafe {
         // callback 0-4
         KEYBOARD.set_callback0(key_event as fn(i32));
@@ -86,31 +90,7 @@ pub extern "C" fn _start() -> ! {
         let mut ide_processor: IDE = IDE::new();
         ide_processor.init();
         let mut fs_processor = fat32::FAT32::new(&mut ide_processor).unwrap();
-        //fs_processor.read_file("KEK/ABA/LOL3.TXT", &mut buf, 420);
-        //fs_processor.delete_directory("KEK/ABA").unwrap();
-        fs_processor.create_file("KEK", "A.TXT").unwrap();
-        fs_processor.create_directory("", "UUU").unwrap();
-        fs_processor.create_directory("UUU", "OOO").unwrap();
-        fs_processor.create_file("UUU", "B.TXT").unwrap();
-        fs_processor.create_file("UUU", "AAA.TXT").unwrap();
-        fs_processor.create_file("UUU/OOO", "CD.TXT").unwrap();
-        fs_processor.create_file("KEK", "B0.TXT").unwrap();
-        let str1: &str = "append from fs wow!";
-        fs_processor
-            .write_file("KEK/A.TXT", str1.as_bytes(), str1.len())
-            .unwrap();
-        let str2: &str = " [please hope this appends]";
-        fs_processor
-            .write_file("LOL.TXT", str2.as_bytes(), str2.len())
-            .unwrap();
-        fs_processor.create_file("UUU/OOO", "LOL.TXT").unwrap();
-
-        fs_processor
-            .write_file("UUU/OOO/LOL.TXT", str2.as_bytes(), str2.len())
-            .unwrap();
-
-        /* From reading a file */
-        qemu_println(unsafe { core::str::from_utf8_unchecked(&buf) });
+        test_filesystem(&mut fs_processor);
     }
     if do_graphics_test {
         test_graphics_lib();

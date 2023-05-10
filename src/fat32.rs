@@ -949,6 +949,34 @@ impl<'a> FAT32<'a> {
     }
 }
 
+pub fn test_filesystem(fs_processor: &mut FAT32) {
+    let buf: [u8; 10] = [0x10u8; 10];
+    
+    let mut buf: [u8; 64] = [0x00u8; 64];
+    fs_processor.read_file("KEK/ABA/LOL3.TXT", &mut buf, 420);
+    fs_processor.delete_directory("KEK/ABA").unwrap();
+    fs_processor.create_file("KEK", "A.TXT").unwrap();
+    fs_processor.create_directory("", "UUU").unwrap();
+    fs_processor.create_directory("UUU", "OOO").unwrap();
+    fs_processor.create_file("UUU", "B.TXT").unwrap();
+    fs_processor.create_file("UUU", "AAA.TXT").unwrap();
+    fs_processor.create_file("UUU/OOO", "CD.TXT").unwrap();
+    fs_processor.create_file("KEK", "B0.TXT").unwrap();
+    let str1: &str = "append from fs wow!";
+    fs_processor
+        .write_file("KEK/A.TXT", str1.as_bytes(), str1.len())
+        .unwrap();
+    let str2: &str = " [please hope this appends]";
+    fs_processor
+        .write_file("LOL.TXT", str2.as_bytes(), str2.len())
+        .unwrap();
+    fs_processor.create_file("UUU/OOO", "LOL.TXT").unwrap();
+
+    fs_processor
+        .write_file("UUU/OOO/LOL.TXT", str2.as_bytes(), str2.len())
+        .unwrap();
+}
+
 #[cfg(test)]
 mod fat32_tests {
     use super::*;
