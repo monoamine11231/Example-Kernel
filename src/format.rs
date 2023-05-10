@@ -1,7 +1,5 @@
 #![macro_use]
 pub use heapless::String;
-use crate::WRITER;
-pub const FORMAT_STRING_SIZE: usize = 256; // for now
 
 
 #[macro_export]

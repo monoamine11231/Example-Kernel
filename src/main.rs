@@ -14,14 +14,15 @@ mod drivers;
 mod graph;
 mod handlers;
 mod math;
-mod format;
 pub mod mem;
 mod pic;
 mod tooling;
 mod utils;
+mod format;
 mod time;
 mod misc;
 mod heap;
+
 use core::arch::asm;
 use core::fmt::Write;
 
@@ -42,8 +43,7 @@ use mem::memory::{self, *};
 use tooling::qemu_io::{
     qemu_fmt_println, qemu_print, qemu_print_hex, qemu_print_num, qemu_println,
 };
-use tooling::vga::{write_str_at, VGAWriter};
-use format::*;
+use tooling::vga::write_str_at;
 
 use crate::graph::font_data;
 use crate::graph::font_writer;
@@ -54,16 +54,17 @@ use crate::graph::surface;
 use crate::handlers::*;
 use crate::math::vec2;
 
-static mut WRITER: VGAWriter = VGAWriter {
-    buffer: &mut [0],
-    idx: 0,
-    color: 0,
-};
+pub const FORMAT_STRING_SIZE: usize = 256;
+
+// "options"
+const use_fs: bool = false;
+const do_graphics_test: bool = false;
+
 
 #[no_mangle]
 #[link_section = ".start"]
 pub extern "C" fn _start() -> ! {
-    unsafe {WRITER = VGAWriter::new();}
+    time::init();
     load_idt(&IDTX);
 
     let my_root = math::utils::sqrt(5.0);
@@ -84,33 +85,36 @@ pub extern "C" fn _start() -> ! {
     let mut fs_processor = fat32::FAT32::new(&mut ide_processor).unwrap();
 
     let mut buf: [u8; 64] = [0x00u8; 64];
-    //fs_processor.read_file("KEK/ABA/LOL3.TXT", &mut buf, 420);
-    //fs_processor.delete_directory("KEK/ABA").unwrap();
-    //fs_processor.create_file("KEK", "A.TXT").unwrap();
-    //fs_processor.create_directory("", "UUU").unwrap();
-    //fs_processor.create_directory("UUU", "OOO").unwrap();
-    //fs_processor.create_file("UUU", "B.TXT").unwrap();
-    //fs_processor.create_file("UUU", "AAA.TXT").unwrap();
-    //fs_processor.create_file("UUU/OOO", "CD.TXT").unwrap();
-    /*fs_processor.create_file("KEK", "B0.TXT").unwrap();
-    let str1: &str = "append from fs wow!";
-    fs_processor
-        .write_file("KEK/A.TXT", str1.as_bytes(), str1.len())
-        .unwrap();
-    let str2: &str = " [please hope this appends]";
-    fs_processor
-        .write_file("LOL.TXT", str2.as_bytes(), str2.len())
-        .unwrap();
-    fs_processor.create_file("UUU/OOO", "LOL.TXT").unwrap();
+    if use_fs {
+        //fs_processor.read_file("KEK/ABA/LOL3.TXT", &mut buf, 420);
+        //fs_processor.delete_directory("KEK/ABA").unwrap();
+        fs_processor.create_file("KEK", "A.TXT").unwrap();
+        fs_processor.create_directory("", "UUU").unwrap();
+        fs_processor.create_directory("UUU", "OOO").unwrap();
+        fs_processor.create_file("UUU", "B.TXT").unwrap();
+        fs_processor.create_file("UUU", "AAA.TXT").unwrap();
+        fs_processor.create_file("UUU/OOO", "CD.TXT").unwrap();
+        fs_processor.create_file("KEK", "B0.TXT").unwrap();
+        let str1: &str = "append from fs wow!";
+        fs_processor
+            .write_file("KEK/A.TXT", str1.as_bytes(), str1.len())
+            .unwrap();
+        let str2: &str = " [please hope this appends]";
+        fs_processor
+            .write_file("LOL.TXT", str2.as_bytes(), str2.len())
+            .unwrap();
+        fs_processor.create_file("UUU/OOO", "LOL.TXT").unwrap();
 
-    fs_processor
-        .write_file("UUU/OOO/LOL.TXT", str2.as_bytes(), str2.len())
-        .unwrap();
-    */
+        fs_processor
+            .write_file("UUU/OOO/LOL.TXT", str2.as_bytes(), str2.len())
+            .unwrap();
 
-    /* From reading a file */
-    qemu_println(unsafe { core::str::from_utf8_unchecked(&buf) });
-    test_graphics_lib();
+        /* From reading a file */
+        qemu_println(unsafe { core::str::from_utf8_unchecked(&buf) });
+    }
+    if do_graphics_test {
+        test_graphics_lib();
+    }
     //qemu_print_hex(a);
 
     // unsafe {
