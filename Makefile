@@ -16,10 +16,10 @@ os.img: cargo mbr.bin vbr.bin
 run: os.img
 #Kommenterar ut detta för tillfället
 #	sudo sh fstest.sh
-	qemu-system-x86_64 -drive format=raw,media=disk,file=build/os.img -serial stdio -no-reboot -no-shutdown -soundhw pcspk
+	qemu-system-x86_64 -audiodev driver=alsa,id=snd0 -device AC97,audiodev=snd0 -drive format=raw,media=disk,file=build/os.img -serial stdio -no-reboot -no-shutdown
 
 debug: os.img
-	qemu-system-x86_64 -drive format=raw,media=disk,file=build/os.img -serial stdio -d cpu_reset,guest_errors -no-reboot -no-shutdown -S -gdb tcp::9000
+	qemu-system-x86_64 -audiodev driver=alsa,id=snd0 -device AC97,audiodev=snd0 -drive format=raw,media=disk,file=build/os.img -serial stdio -d cpu_reset,guest_errors -no-reboot -no-shutdown -S -gdb tcp::9000
 
 clean:
 	rm build/kernel.bin build/os.img build/bootloader/mbr.bin build/bootloader/vbr.bin

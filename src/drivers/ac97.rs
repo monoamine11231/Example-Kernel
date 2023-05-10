@@ -18,10 +18,13 @@ impl AC97 {
         let mut bar1: u16 = 0x00;
 
         let control_reg: u8 = pci_read_u8(bus, slot, function, 0x04);
-        qemu_println("AAAA:::++");
-        qemu_print_hex(control_reg as u32);
+
+        /* Set to control register IO space & bus master bit which are required */
         pci_write_u8(bus, slot, function, 0x04, control_reg | 0x05);
-        qemu_print_hex(pci_read_u8(bus, slot, function, 0x04) as u32);
+        
+        if control_reg | 0x05 != pci_read_u8(bus, slot, function, 0x04) {
+            return Err("Could not set the IO & bus master bits to AC97");
+        }
 
         match header_type {
             0x00 => {
@@ -41,7 +44,7 @@ impl AC97 {
             }
         }
 
-
+        
 
         Ok(())
     }
