@@ -72,7 +72,7 @@ pub struct DirectoryEntry {
     last_modification_time: u16,
     last_modification_date: u16,
     low_first_entry_cluster: u16,
-    file_size: u32
+    file_size: u32,
 }
 
 impl DirectoryEntry {
@@ -97,12 +97,7 @@ impl DirectoryEntry {
                 0x00 => {
                     let mut s: String<8> = String::new();
 
-                    for c in self
-                        .file_name
-                        .iter()
-                        .filter(|x| x.ne(&&0x20))
-                        .into_iter()
-                    {
+                    for c in self.file_name.iter().filter(|x| x.ne(&&0x20)).into_iter() {
                         s.push(*c as char);
                     }
 
@@ -113,12 +108,7 @@ impl DirectoryEntry {
                 0x01 => {
                     let mut s: String<3> = String::new();
 
-                    for c in self
-                        .file_ext
-                        .iter()
-                        .filter(|x| x.ne(&&0x20))
-                        .into_iter()
-                    {
+                    for c in self.file_ext.iter().filter(|x| x.ne(&&0x20)).into_iter() {
                         s.push(*c as char);
                     }
 
@@ -137,12 +127,7 @@ impl DirectoryEntry {
         if part_counter == 1 {
             let mut s: String<3> = String::new();
 
-            for c in self
-                .file_ext
-                .iter()
-                .filter(|x| x.ne(&&0x20))
-                .into_iter()
-            {
+            for c in self.file_ext.iter().filter(|x| x.ne(&&0x20)).into_iter() {
                 s.push(*c as char);
             }
 
@@ -818,7 +803,7 @@ impl<'a> FAT32<'a> {
                 let fetch: Option<(*mut DirectoryEntry, bool)> = DirectoryEntry::fetch(dir_offset);
                 /* None is marking the end of directory */
                 if fetch.is_none() {
-                    break 'cluster_loop
+                    break 'cluster_loop;
                 }
                 let (entry, skip) = fetch.unwrap();
                 /* Deleted entry - move on */
@@ -877,7 +862,7 @@ impl<'a> FAT32<'a> {
             loop {
                 let fetch = unsafe { DirectoryEntry::fetch(LOAD_ADDR + offset as u64) };
                 if fetch.is_none() {
-                    break 'cluster_loop
+                    break 'cluster_loop;
                 }
 
                 let (entry, skip) = fetch.unwrap();
@@ -886,7 +871,7 @@ impl<'a> FAT32<'a> {
                     continue;
                 }
 
-                if unsafe {(*entry).compare_filename(filename) }.unwrap() {
+                if unsafe { (*entry).compare_filename(filename) }.unwrap() {
                     return true;
                 }
 
