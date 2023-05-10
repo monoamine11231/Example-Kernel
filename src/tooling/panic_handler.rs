@@ -4,7 +4,7 @@ use core::arch::asm;
 use core::fmt::Write;
 use core::panic::PanicInfo;
 
-use super::qemu_io::{qemu_print, qemu_println};
+use super::qemu_io::{qemu_fmt_println, qemu_print, qemu_println};
 //use core::option;
 
 fn format_line_number(line: u32) -> &'static str {
@@ -39,7 +39,7 @@ fn format_line_number(line: u32) -> &'static str {
 }
 
 /// Prints the file and line number where the panic occurred.
-fn print_location(writer: &mut VGAWriter, location: &core::panic::Location) {
+fn print_location(location: &core::panic::Location) {
     let file = location.file();
     let line = location.line();
     qemu_print(file);
@@ -47,27 +47,19 @@ fn print_location(writer: &mut VGAWriter, location: &core::panic::Location) {
     qemu_print("Line: ");
 
     let line_str = format_line_number(line);
-    qemu_print(&line_str)
+    qemu_println(&line_str)
 }
 
 /// Prints the panic message.
-fn print_message(message: core::fmt::Arguments, writer: Option<VGAWriter>) -> VGAWriter {
-    let mut writer: VGAWriter = match writer {
-        None => VGAWriter::new(),
-        Some(w) => w,
-    };
-    let _ = write!(writer, "{}", message);
-    //let message_str = core::str::from_utf8(&mut writer.buffer[..writer.idx]).unwrap_or("<invalid utf8>");
-    //writer.write_str_at(message_str, 5, 0, 0xc);
-    return writer;
+fn print_message(message: core::fmt::Arguments) {
+    qemu_fmt_println("{}", message);
 }
 
-pub fn stack_trace(writer: &mut VGAWriter) {
+pub fn stack_trace() {
     let mut rbp: *mut u64;
     let mut saved_rbp: *mut u64;
     let mut saved_rip: u64;
     let mut should_quit: u64;
-    //let mut writer : VGAWriter = VGAWriter::new();
     unsafe {
         loop {
             // ; saved rbp is pointed to by rbp, which is stored in rbx
@@ -94,16 +86,17 @@ pub fn stack_trace(writer: &mut VGAWriter) {
             //    pop rbp
             //    mov {1}, rbp
             // ", out(reg) ebp, out(reg) saved_ebp);
-            write!(
-                writer,
+            qemu_fmt_println(
                 "{}",
                 format_args!(
                     "RBP = {:#x}, SAVED RBP = {:#x}, CALLER RIP = {:#x} TOP_FRAME = {}",
                     rbp as u64, saved_rbp as u64, saved_rip, should_quit
-                )
+                ),
             ); // Some(print_message(format_args!("EBP = {:#x}, SAVED EBP = {:#x}, TOP_FRAME = {}\n", ebp as u64, saved_ebp as u64, should_quit), writer));
-            writer.newline();
+            qemu_print("\n");
             if should_quit == 1 {
+                qemu_print("=========================================================\n\n");
+
                 break;
             }
         }
@@ -115,23 +108,19 @@ fn dump_current_frame() {}
 /// This function is called on panic.
 #[panic_handler]
 pub fn panic(info: &PanicInfo) -> ! {
-    let mut vga: VGAWriter = VGAWriter::new();
-    //vga.write_color("PANIC", Some(0xc)); // Print "PANIC" at row 2, column 0 with color 0xc (light red)
+    qemu_println("\n\n=========================================================");
+
     qemu_println("PANIC!");
 
     if let Some(location) = info.location() {
-        print_location(&mut vga, location);
+        print_location(location);
     }
 
     if let Some(message) = info.message() {
-        print_message(*message, None);
+        print_message(*message);
     }
-    //vga.newline();
-    //vga.newline();
+    stack_trace();
 
-    qemu_print("\n");
-    qemu_print("\n");
-
-    stack_trace(&mut vga);
+    qemu_print("=========================================================\n\n");
     loop {}
 }
