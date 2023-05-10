@@ -11,6 +11,7 @@ somewhat reliable fashion.
 
 */
 use crate::tooling::serial::*;
+use crate::heap::vectors::*;
 
 const DIVISOR: u16 = 1193; // == 1193181 / 1000 hz
 
@@ -22,12 +23,14 @@ pub static mut TIMER: Timer = Timer {
     active: false,
 };
 
+pub static mut TIMERS: Vec<Timer> = Vec::empty_null();
+
 #[repr(C)]
 #[derive(Clone)]
-pub struct Timer<'a> {
+pub struct Timer {
     max: u64,
     cur: u64,
-    func: &'a dyn Fn(),
+    func: &'static dyn Fn(),
     active: bool,
 }
 
@@ -49,13 +52,22 @@ pub fn get_millis() -> u64 {
 // yeah this rust syntax makes me want to vomit
 // but basically you can pass a fn into Timer and it will be executed when the timer is done
 // only empty void functions are supported atm, hopefully somebody who knows rust can add params and return value (wrapped in Option?)
-impl<'a> Timer<'a> {
-    pub fn new(time: u64, function: &'a dyn Fn()) -> Self {
+impl Timer {
+    fn _new(time: u64, function: &'static dyn Fn()) -> Self {
         Timer {
             max: time,
             cur: 0,
             func: function,
             active: false,
+        }
+    }
+
+    // TODO: make a static mut timers vector
+    // so that we can have multiple timers at the same time
+    pub fn new(time: u64, function: &'static dyn Fn()) {
+        unsafe {
+            TIMER = Timer::_new(time, function);
+            TIMER.init();
         }
     }
 

@@ -1,4 +1,5 @@
 use core::mem::size_of;
+
 use crate::mem::alloc::kalloc;
 
 #[repr(C, packed)]
@@ -10,7 +11,7 @@ pub struct Vec<T> {
 
 impl<T> Vec<T> {
 
-    pub fn new<T>() -> Self {
+    pub fn new() -> Self {
         if size_of::<T>() != 0 {
             Vec {
                 pointer: kalloc(80 * size_of::<T>()) as *mut T,
@@ -26,32 +27,19 @@ impl<T> Vec<T> {
         }
     }
 
+    pub const fn empty_null() -> Self {
+        Vec {
+            pointer: 0 as *mut T,
+            length: 0,
+            capacity: 0
+        }
+    }
+
     pub fn push(&self, elem: T) {
         unsafe {
             self.pointer.offset(
                 todo!()
             );
     }
-    }
-}
-
-// slight help from chat gippity since the rust docs werent helpful
-// this is to enable indexing through the vector obviously
-// thx stack overflow lol
-impl<T, Idx> core::ops::Index<Idx> for Vec<T> 
-where 
-    Idx: core::ops::Index
-{
-    type Output = T;
-
-    #[inline(always)]
-    fn index(&self, index: Idx) -> &T {
-        if index >= self.length {
-            panic!("index out of bounds: the len is {} but the index is {}", self.length, index)
-        } else {
-            unsafe {
-                &*self.pointer.offset((index * size_of::<T>()) as isize)
-            }
-        }
     }
 }

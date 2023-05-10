@@ -5,8 +5,7 @@ use crate::tooling::serial::*;
 // in the sub-contra octave.
 // this is an inefficient way to do it but it gets coded faster
 // note that since the frequency (when played) has to be an u32, it will be truncated
-// this means that very low-freq notes will sound out of tune
-//
+// this means that very high-freq notes will sound out of tune
 pub struct Notes;
 
 #[allow(non_upper_case_globals)]
@@ -90,7 +89,7 @@ pub fn stop() {
 // beep() and sweep() should not be used since they just waste cpu time
 pub fn beep(freq: u32, duration: u64) {
     play(freq);
-    crate::waste_time(duration)
+    crate::time::Timer::new(duration, &stop);
     // stop();
 }
 

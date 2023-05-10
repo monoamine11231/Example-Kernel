@@ -38,7 +38,7 @@ use tooling::qemu_io::{qemu_print_hex, qemu_println};
 use tooling::vga::write_str_at;
 use tooling::serial::*;
 use core::borrow::BorrowMut;
-use audio_system::audio;
+use audio_system::audio::{self, note, Notes};
 use crate::tooling::vga::VGAWriter;
 pub const FORMAT_STRING_SIZE: usize = 256;
 
@@ -62,7 +62,7 @@ pub extern "C" fn _start() -> ! {
     time::init();
     test_funcs::rainbow_print("Hello world!!");
     memory::init();
-    // audio::play(audio::note(audio::Notes::A, 4)); // play A4 (440 Hz) (at super high volume -.-)
+    // audio::beep(audio::note(audio::Notes::A, 4), 1000); // play A4 (440 Hz) (at super high volume -.-)
 
     let buf: [u8; 10] = [0x10u8; 10];
 
@@ -122,10 +122,15 @@ pub extern "C" fn _start() -> ! {
         time::TIMER.init();
     }
 
-    while true {
-        i += 1;
-        println!("{}", i as u8);
-        if i > 256 {break;}
+    while false {   // only put true here if you want your eardrums to explode
+        audio::beep(note(Notes::C, 3), 375);
+        waste_time(1000000);
+        audio::beep(note(Notes::F, 2), 625);
+        waste_time(3000000);
+        audio::beep(note(Notes::A, 2), 375);
+        waste_time(1000000);
+        audio::beep(note(Notes::G, 2), 625);
+        waste_time(3000000);
     }
 
     loop {}
