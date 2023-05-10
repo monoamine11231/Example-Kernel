@@ -86,7 +86,6 @@ pub extern "C" fn _start() -> ! {
         let mut ide_processor: IDE = Default::default();
         ide_processor.init();
         let mut fs_processor = fat32::FAT32::new(&mut ide_processor).unwrap();
-        let mut fs_processor = fat32::FAT32::new(&mut ide_processor).unwrap();
         //fs_processor.read_file("KEK/ABA/LOL3.TXT", &mut buf, 420);
         //fs_processor.delete_directory("KEK/ABA").unwrap();
         fs_processor.create_file("KEK", "A.TXT").unwrap();
