@@ -104,3 +104,12 @@ pub fn say_hi() {
         TIMER.init();
     }
 }
+
+pub fn sleep(millis: u64) {
+    let then = get_millis() + millis;
+    loop {
+        if get_millis() >= then {
+            break;
+        }
+    }
+}

@@ -48,6 +48,7 @@ impl AC97 {
     
         let mut bar0: u16 = 0x00;
         let mut bar1: u16 = 0x00;
+        let mut io_base: u16 = 0;
 
         let control_reg: u8 = pci_read_u8(bus, slot, function, 0x04);
 
@@ -64,12 +65,29 @@ impl AC97 {
                 /* In this version of QEMU we know that AC97 uses Port IO */
                 bar0 = pci_get_bar_address(header0x00.bar0) as u16;
                 bar1 = pci_get_bar_address(header0x00.bar1) as u16;
+                io_base = 0;
+
+                // qemu_print!("pci_get_bar_address: {}, header0x00.bar0: {}\n", bar0, header0x00.bar0);
+                qemu_print_hex(bar0 as u32);
+                qemu_print_hex(header0x00.bar0 as u32);
+
+                // qemu_print!("pci_get_bar_address: {}, header0x00.bar1: {}\n", bar1, header0x00.bar1);
+                qemu_print_hex(bar1 as u32);
+                qemu_print_hex(header0x00.bar1 as u32);
             },
             0x01 => {
                 let header0x01 = pci_get_header_0x01(bus, slot, function)?;
                 /* In this version of QEMU we know that AC97 uses Port IO */
                 bar0 = pci_get_bar_address(header0x01.bar0) as u16;
                 bar1 = pci_get_bar_address(header0x01.bar1) as u16;
+
+                // qemu_print!("pci_get_bar_address: {}, header0x01.bar0: {}\n", bar0, header0x00.bar0);
+                qemu_print_hex(bar0 as u32);
+                qemu_print_hex(header0x01.bar0 as u32);
+
+                // qemu_print!("pci_get_bar_address: {}, header0x01.bar1: {}\n", bar1, header0x00.bar1);
+                qemu_print_hex(bar1 as u32);
+                qemu_print_hex(header0x01.bar1 as u32);
             },
             _ => {
                 return Err("Wrong header type for AC97")
@@ -77,13 +95,19 @@ impl AC97 {
         }
 
         /* CBA error handling atm, i will (maybe) add that later */
+        qemu_print!("\nbar0 = {}, bar1 = {}, sum = {}", bar0, bar1, (bar0 as u32) + (bar1 as u32) );
+        
+        /* Reset the register, then enable interrupts from it */
+        outd(bar1 + OFFSET_GLOBAL_CTRL, 0x2);
+        waste_time(30000);
+        outd(bar1 + OFFSET_GLOBAL_CTRL, 0x1);
 
         /* Set master volume to 32 out of 64 in both channels*/
         outw(bar0 + OFFSET_VOLUME, 0x4040);
         
         /* DON'T move this code. Trust me on this one. */
         let mut rng = rand::Rng::new();
-        let noise = generate_noise(rng);
+        let noise = generate_noise(&mut rng);
 
         /* Set PCM output volume to +0 dB, instead of the default -inf */
         outw(bar0 + OFFSET_PCM_VOLUME, 0x8808);
@@ -95,6 +119,13 @@ impl AC97 {
                 size: noise.len() as u16 / 2, // 16 bit audio = 2 bytes
                 flags: 0b11 << 14 // generate interrupt after every sample; stop playing sound after this buffer is done
             };
+
+        /* finally, enable data transfer */
+        outb(bar1 + 0x1B,
+            inb(bar1 + 0x1B) | 0x1
+        );
+
+
 
         buf_desc.play(bar0, bar1)?;
 
@@ -117,6 +148,7 @@ struct BufferDescriptor {
 
 impl BufferDescriptor {
     fn play(&self, bar0: u16, bar1: u16) -> Result<(), &'static str> {
+        let mut rng2 = rand::Rng::new();
         let mut poll_ctr = 0;
         /* feeling cute might add error handling later */
 
@@ -163,10 +195,10 @@ impl BufferDescriptor {
         /* set the last valid buffer entry to 0, which is the amount of buffers - 1*/
         outb(bar1 + 0x15, 0);
 
-        /* finally, enable data transfer */
-        outb(bar1 + 0x1B,
-            inb(bar1 + 0x1B) | 1
-        );
+        waste_time(100000);
+
+        qemu_print!("Global Status: 0b{:032b} (0x{:08X})\n", ind(bar1 + OFFSET_GLOBAL_STATUS), ind(bar1 + OFFSET_GLOBAL_STATUS));
+        qemu_print!("Global Control: 0b{:032b} (0x{:08X})\n", ind(bar1 + OFFSET_GLOBAL_CTRL), ind(bar1 + OFFSET_GLOBAL_CTRL));
 
 
 
@@ -177,7 +209,7 @@ impl BufferDescriptor {
 
 
 
-
+         waste_time(8192227631);
         Ok(())
     }
 }
@@ -185,7 +217,7 @@ impl BufferDescriptor {
 // generate a random [u16; 1024]
 // in a very inefficient way cuz cba 
 
-fn generate_noise(mut rng: rand::Rng) -> [u16; 1024] {
+fn generate_noise(rng: &mut rand::Rng) -> [u16; 1024] {
     let mut i = 0;
     let mut arr = [0u16; 1024];
     while i < 1024 {
@@ -200,4 +232,13 @@ fn generate_noise(mut rng: rand::Rng) -> [u16; 1024] {
 #[inline]
 fn as_physical_address<T>(ptr: *const T) -> *const T {
     ptr
-} 
+}
+
+// test func
+#[inline]
+fn waste_time(t: u64) {
+    let mut i = t;
+    while i > 0 {
+        i -= 1;
+    }
+}
