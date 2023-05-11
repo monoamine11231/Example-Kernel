@@ -61,17 +61,24 @@ macro_rules! mystery_handler {
 }
 
 pub extern "x86-interrupt" fn handler1_wtf(isf: InterruptStackFrame) {
-    // wrong args i think
+    // make all of the timers tick
+
     unsafe {
+        let mut i = 0;
         time::MILLIS += 1;
         time::MILLIS_TOTAL += 1;
-        time::TIMER.tick();
+        while i < time::TIMERS.len() {
+            time::TIMERS[i].tick();
+            i += 1;
+        }
+
         if time::MILLIS == 1000 {
             time::MILLIS = 0;
             TIME_ELAPSED += 1;
             qemu_print!("a second passed! ({})\n", TIME_ELAPSED);
         }
     }
+    
     outb(0xA0, 0x20);
     outb(0x20, 0x20);
     

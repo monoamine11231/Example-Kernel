@@ -4,6 +4,7 @@ use crate::qemu_print;
 use super::pci::{pci_device_search_by_class_subclass, pci_get_header_type, pci_get_header_0x00, pci_get_bar_address, pci_get_header_0x01, pci_read_u8, pci_write_u8};
 use crate::misc::rand;
 use crate::format;
+use crate::time;
 /*  
 * Shameless theft from https://wiki.osdev.org/AC97
 */
@@ -97,10 +98,14 @@ impl AC97 {
         /* CBA error handling atm, i will (maybe) add that later */
         qemu_print!("\nbar0 = {}, bar1 = {}, sum = {}", bar0, bar1, (bar0 as u32) + (bar1 as u32) );
         
-        /* Reset the register, then enable interrupts from it */
+        /* Reset the global ctrl register, then enable interrupts from it */
         outd(bar1 + OFFSET_GLOBAL_CTRL, 0x2);
         waste_time(30000);
         outd(bar1 + OFFSET_GLOBAL_CTRL, 0x1);
+
+        /* Also reset the Native Audio Mixer, by writing to the reset register */
+
+        outb(bar0 + OFFSET_RESET, 1);
 
         /* Set master volume to 32 out of 64 in both channels*/
         outw(bar0 + OFFSET_VOLUME, 0x4040);
@@ -128,6 +133,7 @@ impl AC97 {
 
 
         buf_desc.play(bar0, bar1)?;
+        // time::sleep(100000);
 
         
 
@@ -200,7 +206,7 @@ impl BufferDescriptor {
         qemu_print!("Global Status: 0b{:032b} (0x{:08X})\n", ind(bar1 + OFFSET_GLOBAL_STATUS), ind(bar1 + OFFSET_GLOBAL_STATUS));
         qemu_print!("Global Control: 0b{:032b} (0x{:08X})\n", ind(bar1 + OFFSET_GLOBAL_CTRL), ind(bar1 + OFFSET_GLOBAL_CTRL));
 
-
+        
 
 
 

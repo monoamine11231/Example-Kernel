@@ -24,15 +24,24 @@ pub static mut TIMER: Timer = Timer {
     active: false,
 };
 
-pub static mut TIMERS: Vec<Timer> = Vec::empty_null();
+pub static mut TIMERS: [Timer; 10] = [Timer::_new(0, &do_nothing); 10];
+pub static mut WAITING_ON_INPUT: bool = false; // todo: implement sleep_until_input
+
+
 
 #[repr(C)]
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct Timer {
     max: u64,
     cur: u64,
     func: &'static dyn Fn(),
     active: bool,
+}
+
+#[repr(C)]
+pub struct TimerPtr {
+    valid: bool,
+    index: usize
 }
 
 // set the PIT to 1000 interrupts/sec, instead of the default 18
@@ -54,7 +63,7 @@ pub fn get_millis() -> u64 {
 // but basically you can pass a fn into Timer and it will be executed when the timer is done
 // only empty void functions are supported atm, hopefully somebody who knows rust can add params and return value (wrapped in Option?)
 impl Timer {
-    fn _new(time: u64, function: &'static dyn Fn()) -> Self {
+    const fn _new(time: u64, function: &'static dyn Fn()) -> Self {
         Timer {
             max: time,
             cur: 0,
@@ -65,10 +74,20 @@ impl Timer {
 
     // TODO: make a static mut timers vector
     // so that we can have multiple timers at the same time
-    pub fn new(time: u64, function: &'static dyn Fn()) {
+    pub fn new(time: u64, function: &'static dyn Fn()) -> TimerPtr {
         unsafe {
-            TIMER = Timer::_new(time, function);
-            TIMER.init();
+            let mut i = 0;
+            while i < TIMERS.len() {
+                if TIMERS[i].cur >= TIMERS[i].max {
+                    TIMERS[i] = Timer::_new(time, function);
+                    return TimerPtr {
+                        valid: true,
+                        index: i
+                    }
+                }
+                i += 1;
+            }
+            panic!("Too many timers!")
         }
     }
 
@@ -89,8 +108,18 @@ impl Timer {
             self.cur += 1;
             if self.cur >= self.max {
                 (self.func)();
-                // self.active = false;
+                self.active = false;
                 // commented out because the timer stops ticking even after restarted
+            }
+        }
+    }
+}
+
+impl TimerPtr {
+    pub fn init(&self) {
+        if self.valid {
+            unsafe {
+                TIMERS[self.index].active = true;
             }
         }
     }
@@ -112,4 +141,8 @@ pub fn sleep(millis: u64) {
             break;
         }
     }
+}
+
+fn do_nothing() {
+    return;
 }

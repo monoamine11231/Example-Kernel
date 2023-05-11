@@ -73,6 +73,10 @@ pub extern "C" fn _start() -> ! {
     memory::init();
     pic::init();
     time::init();
+
+    let z = time::Timer::new(1000, &say_hi);
+    z.init();
+
     let mut rng = misc::rand::Rng::new();
 
     let mut audio_processor: AC97 = AC97::new();
@@ -358,4 +362,8 @@ fn panicking_function() -> ! {
     panic!("This is a test panic.");
 
     loop {}
+}
+
+fn say_hi() {
+    qemu_println!("Hi!");
 }
