@@ -1,3 +1,4 @@
+use crate::qemu_println;
 use crate::time;
 use crate::tooling::serial::*;
 
@@ -46,7 +47,7 @@ pub fn note(_note: f64, octave: u8) -> u32 {
                 octave
             ),
         } as f64) as u32;
-    println!("{}", res);
+    qemu_println!("{}", res);
     res
 }
 
