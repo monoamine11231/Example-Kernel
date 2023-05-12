@@ -968,7 +968,7 @@ impl<'a> FAT32<'a> {
 
 pub fn test_filesystem(fs_processor: &mut FAT32) {
     let buf: [u8; 10] = [0x10u8; 10];
-    
+
     let mut buf: [u8; 64] = [0x00u8; 64];
     fs_processor.read_file("KEK/ABA/LOL3.TXT", &mut buf, 420);
     fs_processor.delete_directory("KEK/ABA").unwrap();

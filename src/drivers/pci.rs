@@ -1,6 +1,6 @@
 use crate::tooling::{
     qemu_io::qemu_print_hex,
-    serial::{ind, outd, outb},
+    serial::{ind, outb, outd},
 };
 
 /* Header structs for PCI devices */
@@ -231,7 +231,11 @@ pub fn pci_get_common_header(bus: u8, slot: u8, function: u8) -> PCIDeviceCommon
 /// Extracts and returns the PCI device header of type 0x00 as a struct,
 /// at given bus #, slot #, function #. Tests if the header type of the device is valid
 /// and if the device exists at all
-pub fn pci_get_header_0x00(bus: u8, slot: u8, function: u8) -> Result<PCIDeviceHeader0x00, &'static str> {
+pub fn pci_get_header_0x00(
+    bus: u8,
+    slot: u8,
+    function: u8,
+) -> Result<PCIDeviceHeader0x00, &'static str> {
     if pci_get_vendor_id(bus, slot, function) == 0xFFFF {
         /*Device with unvalid vendor ID was given*/
         return Err("Device with unvalid vendor ID was given");
@@ -261,7 +265,11 @@ pub fn pci_get_header_0x00(bus: u8, slot: u8, function: u8) -> Result<PCIDeviceH
 /// Extracts and returns the PCI device header of type 0x01 as a struct,
 /// at given bus #, slot #, function #. Tests if the header type of the device is valid
 /// and if the device exists at all
-pub fn pci_get_header_0x01(bus: u8, slot: u8, function: u8) -> Result<PCIDeviceHeader0x01, &'static str> {
+pub fn pci_get_header_0x01(
+    bus: u8,
+    slot: u8,
+    function: u8,
+) -> Result<PCIDeviceHeader0x01, &'static str> {
     if pci_get_vendor_id(bus, slot, function) == 0xFFFF {
         /*Device with unvalid vendor ID was given*/
         return Err("Device with unvalid vendor ID was given");
@@ -291,7 +299,11 @@ pub fn pci_get_header_0x01(bus: u8, slot: u8, function: u8) -> Result<PCIDeviceH
 /// Extracts and returns the PCI device header of type 0x02 as a struct,
 /// at given bus #, slot #, function #. Tests if the header type of the device is valid
 /// and if the device exists at all
-pub fn pci_get_header_0x02(bus: u8, slot: u8, function: u8) -> Result<PCIDeviceHeader0x02, &'static str> {
+pub fn pci_get_header_0x02(
+    bus: u8,
+    slot: u8,
+    function: u8,
+) -> Result<PCIDeviceHeader0x02, &'static str> {
     if pci_get_vendor_id(bus, slot, function) == 0xFFFF {
         /*Device with unvalid vendor ID was given*/
         return Err("Device with unvalid vendor ID was given");
@@ -333,7 +345,10 @@ pub fn pci_get_bar_address(bar: u32) -> u32 {
 /// Returns the bus #, slot # and function # in a triple when found a device with the
 /// given class code. If such device was not found, returns (0xFF, 0xFF, 0xFF) as a
 /// signifier. This function brute forces through all bus lanes and slots.
-pub fn pci_device_search_by_class_subclass(class: u8, subclass: u8) -> Result<(u8, u8, u8), &'static str> {
+pub fn pci_device_search_by_class_subclass(
+    class: u8,
+    subclass: u8,
+) -> Result<(u8, u8, u8), &'static str> {
     /* Iteration not working :/ */
     for bus in 0u8..=255u8 {
         for slot in 0u8..32u8 {

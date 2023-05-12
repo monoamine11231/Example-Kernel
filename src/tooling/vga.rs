@@ -6,12 +6,11 @@ pub struct VGAWriter {
     pub color: u8,
 }
 
-
 struct Color;
 
 impl Color {
     pub const BLACK: u8 = 0;
-    pub const BLUE: u8  = 1;
+    pub const BLUE: u8 = 1;
     pub const GREEN: u8 = 2;
     pub const CYAN: u8 = 3;
     pub const RED: u8 = 4;
@@ -28,7 +27,6 @@ impl Color {
     pub const WHITE: u8 = 15;
 }
 
-
 impl VGAWriter {
     pub fn new() -> Self {
         unsafe {
@@ -37,7 +35,7 @@ impl VGAWriter {
             VGAWriter {
                 buffer: vga_buffer_slice,
                 idx: 3840,
-                color: 0xf
+                color: 0xf,
             }
         }
     }
@@ -77,7 +75,7 @@ impl VGAWriter {
     }
     pub fn write_str_at(&mut self, s: &str, row: usize, col: usize, color: u8) {
         let start_pos = (row * 80 + col) * 2;
-        
+
         for (i, byte) in s.bytes().enumerate() {
             unsafe {
                 self.buffer[(start_pos + i * 2) as usize] = byte;
@@ -87,10 +85,10 @@ impl VGAWriter {
         self.idx = start_pos + s.len();
     }
 
-/*     fn shift_up(&mut self, lines: usize) {
+    /*     fn shift_up(&mut self, lines: usize) {
         let len = 80 * lines;
         let mut bytes = &self.buffer[len..4000];
-        
+
         let mut result = [0; 4000];
         result[(4000 - len)..].copy_from_slice(bytes);
         self.buffer.copy_from_slice(&result);
@@ -99,10 +97,8 @@ impl VGAWriter {
     fn shift_up(&mut self, lines: usize) {
         let len = 160 * lines;
         let mut result: [u8; 4000] = [0; 4000];
-    //    result[..(4000 - len)].copy_from_slice(&self.buffer[len..4000]);
-    //    self.buffer.copy_from_slice(&result);
-
-        
+        //    result[..(4000 - len)].copy_from_slice(&self.buffer[len..4000]);
+        //    self.buffer.copy_from_slice(&result);
     }
 }
 impl Write for VGAWriter {

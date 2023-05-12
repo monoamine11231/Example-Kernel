@@ -1,27 +1,25 @@
 // pseudorandom number generator
 use crate::time::get_millis;
-const FLOAT_DIVISOR     : f32 = 8_388_607.0;
-const DOUBLE_DIVISOR    : f64 = 9_007_199_254_740_991.0;
-const FLOAT_DIVISOR_U32 : u32 = 8388607;
+const FLOAT_DIVISOR: f32 = 8_388_607.0;
+const DOUBLE_DIVISOR: f64 = 9_007_199_254_740_991.0;
+const FLOAT_DIVISOR_U32: u32 = 8388607;
 const DOUBLE_DIVISOR_U64: u64 = 9007199254740991;
-pub static mut RNG      : Rng =  Rng::test();
+pub static mut RNG: Rng = Rng::test();
 
 pub struct Rng {
-    current: u64
+    current: u64,
 }
 
 impl Rng {
     // initialize the random number generator
     pub fn new() -> Self {
         Rng {
-            current: get_millis() + 11111111
+            current: get_millis() + 11111111,
         }
     }
 
     pub const fn test() -> Self {
-        Rng {
-            current: 11111111
-        }
+        Rng { current: 11111111 }
     }
 
     // use the xorshift algo to generate the next number
@@ -69,7 +67,7 @@ impl Rng {
     // NOTE: f32() and f64() only return positive numbers
 
     // trust me bro
-/*     pub fn f32(&mut self) -> f32 {
+    /*     pub fn f32(&mut self) -> f32 {
         let exponent = (self.u32() & 255).saturating_sub(1);
         f32::from_bits(
             self.u32()

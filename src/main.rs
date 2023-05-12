@@ -9,20 +9,20 @@
 #[macro_use]
 extern crate lazy_static;
 
+mod audio_system;
 mod bord;
 mod drivers;
+mod format;
 mod graph;
 mod handlers;
+mod heap;
 mod math;
 pub mod mem;
+mod misc;
 mod pic;
+mod time;
 mod tooling;
 mod utils;
-mod format;
-mod time;
-mod misc;
-mod heap;
-mod audio_system;
 
 use core::arch::asm;
 use core::fmt::Write;
@@ -63,7 +63,6 @@ pub const FORMAT_STRING_SIZE: usize = 256;
 const use_fs: bool = false;
 const do_graphics_test: bool = true;
 
-
 #[no_mangle]
 #[link_section = ".start"]
 pub extern "C" fn _start() -> ! {
@@ -72,7 +71,6 @@ pub extern "C" fn _start() -> ! {
     pic::init();
     //let mut audio_processor: AC97 = AC97::new();
     //audio_processor.init().unwrap();
-    
 
     let my_root = math::utils::sqrt(5.0);
     qemu_fmt_println("{}", format_args!("{}", my_root));
@@ -117,10 +115,11 @@ pub fn key_event(key: i32) {
         qemu_println("C");
     }
     if key == KeyPressedCodes::T as i32 {
-        qemu_println!("time since system start: {}.{:03}s",
-        time::get_millis() / 1000,
-        time::get_millis() % 1000 
-    )
+        qemu_println!(
+            "time since system start: {}.{:03}s",
+            time::get_millis() / 1000,
+            time::get_millis() % 1000
+        )
     }
     if key == KeyPressedCodes::R as i32 {
         let mut rng = crate::misc::rand::Rng::new();
@@ -182,8 +181,11 @@ pub fn test_graphics_lib() {
         }
 
         font_writer.write_and_retrace(&mut writer, "+++++++++++++++", ColorCode::Green);
-        writer.write_line(Vec2::<usize>::new(300,100),Vec2::<usize>::new(304,200) , ColorCode::BrightGreen);
-
+        writer.write_line(
+            Vec2::<usize>::new(300, 100),
+            Vec2::<usize>::new(304, 200),
+            ColorCode::BrightGreen,
+        );
 
         let cursor_pos = font_writer.get_cursor_pos();
         cursor_pos.print();
@@ -192,7 +194,7 @@ pub fn test_graphics_lib() {
         counter += 1;
         wait(100000000);
     }
-    
+
     //writer.color_test();
     //writer.print_plane(1);
 }

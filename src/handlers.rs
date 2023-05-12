@@ -1,6 +1,6 @@
 use crate::input::keyboard::KEYBOARD;
+use crate::{qemu_print, time};
 use core::panic::PanicInfo;
-use crate::{time, qemu_print};
 
 use crate::tooling::{
     self,
@@ -78,10 +78,9 @@ pub extern "x86-interrupt" fn handler1_wtf(isf: InterruptStackFrame) {
             qemu_print!("a second passed! ({})\n", TIME_ELAPSED);
         }
     }
-    
+
     outb(0xA0, 0x20);
     outb(0x20, 0x20);
-    
 }
 
 #[macro_export]

@@ -1,7 +1,7 @@
 use core::arch::asm;
 
-use crate::tooling::serial::{inb, outb};
 use crate::qemu_println;
+use crate::tooling::serial::{inb, outb};
 
 const PIC1_CMD: u16 = 0x20;
 const PIC1_DATA: u16 = 0x21;

@@ -1,13 +1,12 @@
 #![macro_use]
 pub use heapless::String;
 
-
 #[macro_export]
 macro_rules! format {
     ($string:expr, $($arg:tt)*) => {{
         use heapless::String;
         use core::fmt::Write;
-        
+
         let mut formatted_string = String::<{crate::FORMAT_STRING_SIZE}>::new();
         write!(&mut formatted_string, $string, $($arg)*).unwrap();
         formatted_string
@@ -24,7 +23,7 @@ macro_rules! qemu_print {
     ($string:expr, $($arg:tt)*) => {{
         use heapless::String;
         use core::fmt::Write;
-        
+
         let mut formatted_string = String::<{crate::FORMAT_STRING_SIZE}>::new();
         write!(&mut formatted_string, $string, $($arg)*).unwrap();
         crate::tooling::qemu_io::qemu_print(&formatted_string);
@@ -41,7 +40,7 @@ macro_rules! qemu_println {
     ($string:expr) => {{
         use heapless::String;
         use core::fmt::Write;
-        
+
         let mut formatted_string = String::<{crate::FORMAT_STRING_SIZE}>::new();
         write!(&mut formatted_string, $string).unwrap();
         formatted_string.push('\n');
@@ -71,10 +70,10 @@ macro_rules! print {
         /* use heapless::String;
         use core::fmt::Write;
         use crate::WRITER;
-        
+
         let mut formatted_string = String::<{crate::FORMAT_STRING_SIZE}>::new();
         write!(&mut formatted_string, $string, $($arg)*).unwrap();
-        unsafe { 
+        unsafe {
             WRITER.write_str(&formatted_string);
         } */
     }};
@@ -93,7 +92,7 @@ macro_rules! println {
         /* unsafe {
             use core::fmt::Write;
             use crate::WRITER;
-            
+
             WRITER.write_str($string);
             WRITER.newline();
         } */
@@ -103,12 +102,12 @@ macro_rules! println {
         /* use heapless::String;
         use core::fmt::Write;
         use crate::WRITER;
-        
+
         let mut formatted_string = String::<{crate::FORMAT_STRING_SIZE}>::new();
         write!(&mut formatted_string, $string, $($arg)*).unwrap();
-        unsafe { 
+        unsafe {
             WRITER.write_str(&formatted_string);
-            WRITER.newline(); 
+            WRITER.newline();
         } */
     }};
 }

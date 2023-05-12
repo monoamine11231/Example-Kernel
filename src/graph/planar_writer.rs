@@ -176,7 +176,7 @@ impl VgaPlanarWriter {
             }
         }
     }
-    
+
     //mid : (row, col)
     pub fn write_rect(
         &mut self,
@@ -198,31 +198,35 @@ impl VgaPlanarWriter {
         }
     }
 
-    pub fn write_horizontal_line(&mut self, p0 : Vec2::<usize>, length : usize, color : ColorCode){
+    pub fn write_horizontal_line(&mut self, p0: Vec2<usize>, length: usize, color: ColorCode) {
         assert!(p0.x < VgaPlanarWriter::SCAN_LN_CNT);
         let end_col = self.col_clip((p0.y + length) as i32);
         let row = p0.x;
-        
-        for col in p0.y..end_col{
+
+        for col in p0.y..end_col {
             self.write_pixel(row, col, color)
         }
     }
-    
-    pub fn write_line(&mut self, p0 : Vec2::<usize>, p1 : Vec2::<usize>, color : ColorCode){
+
+    pub fn write_line(&mut self, p0: Vec2<usize>, p1: Vec2<usize>, color: ColorCode) {
         let diff = p1 - p0;
-        if(diff.x == 0){
-            self.write_horizontal_line(Vec2::<usize>::new(p0.x, min(p0.y, p1.y)), max(p0.y, p1.y), color);
+        if (diff.x == 0) {
+            self.write_horizontal_line(
+                Vec2::<usize>::new(p0.x, min(p0.y, p1.y)),
+                max(p0.y, p1.y),
+                color,
+            );
             return;
         }
-        let arc_length = (p1-p0).magnitude();
+        let arc_length = (p1 - p0).magnitude();
         let step_cnt = float_ceil(arc_length);
-        let step = Vec2::<f32>::from_vec2usz(&diff) * (1.0/step_cnt as f32);
+        let step = Vec2::<f32>::from_vec2usz(&diff) * (1.0 / step_cnt as f32);
 
-        for i in 0..step_cnt{
-            let curr_pos = Vec2::<f32>::from_vec2usz(&p0) + step*(i as f32);
+        for i in 0..step_cnt {
+            let curr_pos = Vec2::<f32>::from_vec2usz(&p0) + step * (i as f32);
             let floored_pos = Vec2::<usize>::new(float_floor(curr_pos.x), float_floor(curr_pos.y));
             let ceiled_pos = Vec2::<usize>::new(float_ceil(curr_pos.x), float_ceil(curr_pos.y));
-            
+
             self.write_pixel(floored_pos.x, floored_pos.y, color);
             self.write_pixel(ceiled_pos.x, ceiled_pos.y, color);
         }

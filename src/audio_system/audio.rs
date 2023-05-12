@@ -1,6 +1,5 @@
-use crate::tooling::serial::*;
 use crate::time;
-
+use crate::tooling::serial::*;
 
 // musical notes using the 12TET system (C, Db, D, ..., Bb, B)
 // in the sub-contra octave.
@@ -31,24 +30,25 @@ pub const SEMITONE_MULTIPLIER: f64 = 1.05946309436;
 // inlining this might be a mistake, lets see
 #[inline(always)]
 pub fn note(_note: f64, octave: u8) -> u32 {
-    let res = 
-    (_note * 
-    match octave {
-        0 => 1,
-        1 => 2,
-        2 => 4,
-        3 => 8,
-        4 => 16,
-        5 => 32,
-        6 => 64,
-        7 => 128,
-        8 => 256,
-        _ => panic!("attempted to play note with too high frequency (octave = {})", octave)
-    } as f64 ) as u32;
+    let res = (_note
+        * match octave {
+            0 => 1,
+            1 => 2,
+            2 => 4,
+            3 => 8,
+            4 => 16,
+            5 => 32,
+            6 => 64,
+            7 => 128,
+            8 => 256,
+            _ => panic!(
+                "attempted to play note with too high frequency (octave = {})",
+                octave
+            ),
+        } as f64) as u32;
     println!("{}", res);
     res
 }
-
 
 #[repr(C, packed)]
 struct AudioPlayer {
@@ -95,7 +95,7 @@ pub fn beep(freq: u32, duration: u64) {
 }
 
 pub fn sweep(start: i32, end: i32, delay: u64) {
-    let step = if start < end {1.001} else {1.0/1.001};
+    let step = if start < end { 1.001 } else { 1.0 / 1.001 };
     let mut i = start as f64;
     while i < (end as f64) {
         play(i as u32);

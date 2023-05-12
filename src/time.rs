@@ -10,8 +10,8 @@ somewhat reliable fashion.
     it should be once every 1193 ticks...
 
 */
-use crate::tooling::serial::*;
 use crate::heap::vectors::*;
+use crate::tooling::serial::*;
 
 const DIVISOR: u16 = 1193; // == 1193181 / 1000 hz
 
@@ -27,8 +27,6 @@ pub static mut SOUND_TIMER: Timer = Timer::_new(0, &do_nothing);
 pub static mut TIMERS: [Timer; 10] = [Timer::_new(0, &do_nothing); 10];
 pub static mut WAITING_ON_INPUT: bool = false; // todo: implement sleep_until_input
 
-
-
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct Timer {
@@ -40,7 +38,7 @@ pub struct Timer {
 
 #[repr(C)]
 pub struct TimerPtr {
-    index: usize
+    index: usize,
 }
 
 // set the PIT to 1000 interrupts/sec, instead of the default 18
@@ -79,9 +77,7 @@ impl Timer {
             while i < TIMERS.len() {
                 if TIMERS[i].cur >= TIMERS[i].max {
                     TIMERS[i] = Timer::_new(time, function);
-                    return TimerPtr {
-                        index: i
-                    }
+                    return TimerPtr { index: i };
                 }
                 i += 1;
             }
@@ -114,7 +110,6 @@ impl Timer {
 }
 
 impl TimerPtr {
-
     pub fn init(&self) {
         unsafe {
             TIMERS[self.index].active = true;

@@ -16,7 +16,7 @@ impl Vec2<f32> {
         return Vec2 { x: _x, y: _y };
     }
 
-    pub fn from_vec2usz(ot : &Vec2<usize>) -> Self{
+    pub fn from_vec2usz(ot: &Vec2<usize>) -> Self {
         return Vec2::<f32>::new(ot.x as f32, ot.y as f32);
     }
 }

@@ -1,4 +1,6 @@
-use crate::input::key_codes::{get_from_code, KeyPressedCodes, KeyReleasedCodes};
+use crate::input::key_codes::{
+    get_from_code_pressed, get_from_code_released, KeyPressedCodes, KeyReleasedCodes,
+};
 
 use super::key_codes;
 
@@ -54,16 +56,18 @@ impl Keyboard {
         (self.callback3)(code);
         (self.callback4)(code);
 
-        match code {
+        match get_from_code_pressed(code) {
             KeyPressedCodes::CapsLock => self.caps = !self.caps,
-
             KeyPressedCodes::LeftShift => self.shift = true,
             KeyPressedCodes::RightShift => self.shift = true,
             KeyPressedCodes::LeftCtrl => self.ctrl = true,
             KeyPressedCodes::RightCtrl => self.ctrl = true,
             KeyPressedCodes::LeftAlt => self.alt = true,
             KeyPressedCodes::RightAlt => self.alt = true,
+            _ => (),
+        }
 
+        match get_from_code_released(code) {
             KeyReleasedCodes::LeftShift => self.shift = false,
             KeyReleasedCodes::RightShift => self.shift = false,
             KeyReleasedCodes::LeftCtrl => self.ctrl = false,
@@ -75,6 +79,10 @@ impl Keyboard {
     }
 }
 
-pub fn get_key(key_code: i32) -> KeyPressedCodes {
-    return get_from_code(key_code);
+pub fn get_key_pressed(key_code: i32) -> KeyPressedCodes {
+    return get_from_code_pressed(key_code);
+}
+
+pub fn get_key_released(key_code: i32) -> KeyReleasedCodes {
+    return get_from_code_released(key_code);
 }
