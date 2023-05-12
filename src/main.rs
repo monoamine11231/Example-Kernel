@@ -22,6 +22,7 @@ mod format;
 mod time;
 mod misc;
 mod heap;
+mod audio_system;
 
 use core::arch::asm;
 use core::fmt::Write;
@@ -33,7 +34,7 @@ use input::keyboard::KEYBOARD;
 
 use bord::*;
 use drivers::ide::IDE;
-use drivers::ac97::AC97;
+// use drivers::ac97::AC97;
 use graph::font_writer::FontWriter;
 use graph::surface::Surface;
 use graph::utils::{ColorCode, CustomColor};
@@ -54,6 +55,7 @@ use crate::graph::surface;
 
 use crate::handlers::*;
 use crate::math::vec2;
+use audio_system::audio::{self, note, Notes};
 
 pub const FORMAT_STRING_SIZE: usize = 256;
 
@@ -66,21 +68,22 @@ const do_graphics_test: bool = true;
 #[link_section = ".start"]
 pub extern "C" fn _start() -> ! {
     load_idt(&IDTX);
+    time::init();
+    pic::init();
+    //let mut audio_processor: AC97 = AC97::new();
+    //audio_processor.init().unwrap();
+    
 
     let my_root = math::utils::sqrt(5.0);
     qemu_fmt_println("{}", format_args!("{}", my_root));
 
     memory::init();
     pic::init();
-    time::init();
 
     let z = time::Timer::new(1000, &say_hi);
     z.init();
 
     let mut rng = misc::rand::Rng::new();
-
-    let mut audio_processor: AC97 = AC97::new();
-    audio_processor.init().unwrap();
 
     unsafe {
         // callback 0-4
@@ -365,5 +368,5 @@ fn panicking_function() -> ! {
 }
 
 fn say_hi() {
-    qemu_println!("Hi!");
+    qemu_println!("Hello from the timer!");
 }
