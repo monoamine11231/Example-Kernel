@@ -39,7 +39,6 @@ pub struct AC97 {}
 
 impl AC97 {
     pub fn new() -> Self {
-        compile_error!("ac97 not currently implemented");
         return Self {};
     }
 
@@ -102,7 +101,7 @@ impl AC97 {
         /* Reset the global ctrl register, then enable interrupts from it */
         outd(bar1 + OFFSET_GLOBAL_CTRL, 0x2);
         waste_time(30000);
-        //outd(bar1 + OFFSET_GLOBAL_CTRL, 0x1);
+        outd(bar1 + OFFSET_GLOBAL_CTRL, 0x1);
 
         /* Also reset the Native Audio Mixer, by writing to the reset register */
 
@@ -113,12 +112,6 @@ impl AC97 {
         
         /* DON'T move this code. Trust me on this one. */
         let mut rng = rand::Rng::new();
-        let mut noises: [[u16; 1024]; 256] = [[0; 1024]; 256];
-        let mut j = 0;
-        while j < 250 {
-            noises[j] = generate_noise(&mut rng);
-            j += 1;
-        }
         let noise = generate_noise(&mut rng);
 
         /* Set PCM output volume to +0 dB, instead of the default -inf */
@@ -127,9 +120,9 @@ impl AC97 {
         /* This code doesn't belong in an init() function but for testing purposes it will stay */
         let buf_desc: BufferDescriptor = 
             BufferDescriptor { 
-                ptr: &noises as *const [u16; 1024] as u32, 
+                ptr: &noise as *const u16 as u32, 
                 size: noise.len() as u16 / 2, // 16 bit audio = 2 bytes
-                flags: 0b00 << 14 // don't do this -> // generate interrupt after every sample; stop playing sound after this buffer is done
+                flags: 0b11 << 14 // generate interrupt after every sample; stop playing sound after this buffer is done
             };
 
         /* finally, enable data transfer */
@@ -140,8 +133,6 @@ impl AC97 {
 
 
         buf_desc.play(bar0, bar1)?;
-
-        while !sound_is_playing(bar1) {qemu_print!("sound not playing");}
         // time::sleep(100000);
 
         
@@ -236,7 +227,7 @@ fn generate_noise(rng: &mut rand::Rng) -> [u16; 1024] {
     let mut i = 0;
     let mut arr = [0u16; 1024];
     while i < 1024 {
-        arr[i] = (rng.u32() as u16) & 0x3FFF;
+        arr[i] = rng.u32() as u16;
         i += 1;
     }
 
@@ -256,8 +247,4 @@ fn waste_time(t: u64) {
     while i > 0 {
         i -= 1;
     }
-}
-
-fn sound_is_playing(bar1: u16) -> bool {
-    (inw(bar1 + OFFSET_TFER_STATUS + 0x10) & 0b10) != 0
 }

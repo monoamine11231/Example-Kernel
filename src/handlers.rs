@@ -88,8 +88,7 @@ pub extern "x86-interrupt" fn handler1_wtf(isf: InterruptStackFrame) {
 macro_rules! interrupt_asd {
     ($x:tt,$a:tt) => {
         pub extern "x86-interrupt" fn $x(isf: InterruptStackFrame) {
-            //write_str_at(concat!("err: ", stringify!($x)), $a, 0, 0xde)
-            qemu_print!("interrupt #{}- {}\n", $a, stringify!($x));
+            write_str_at(concat!("err: ", stringify!($x)), $a, 0, 0xde)
         }
     };
 }
