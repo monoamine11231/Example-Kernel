@@ -47,7 +47,7 @@ pub fn note(_note: f64, octave: u8) -> u32 {
                 octave
             ),
         } as f64) as u32;
-    qemu_println!("{}", res);
+    // println!("{}", res);
     res
 }
 
@@ -75,7 +75,7 @@ pub fn play(frequency: u32) {
     outb(0x42, divisor as u8);
     outb(0x42, (divisor >> 8) as u8);
     //outw(0x42, divisor as u16);
-    qemu_println!("{} {} {}", divisor as u8, (divisor >> 8) as u8, divisor);
+    // qemu_println!("{} {} {}", divisor as u8, (divisor >> 8) as u8, divisor);
 
     tmp = inb(0x61);
     if tmp != (tmp | 3) {
