@@ -23,7 +23,7 @@ pub static mut TIMER: Timer = Timer {
     func: &say_hi,
     active: false,
 };
-
+pub static mut SOUND_TIMER: Timer = Timer::_new(0, &do_nothing);
 pub static mut TIMERS: [Timer; 10] = [Timer::_new(0, &do_nothing); 10];
 pub static mut WAITING_ON_INPUT: bool = false; // todo: implement sleep_until_input
 
@@ -40,7 +40,6 @@ pub struct Timer {
 
 #[repr(C)]
 pub struct TimerPtr {
-    valid: bool,
     index: usize
 }
 
@@ -81,7 +80,6 @@ impl Timer {
                 if TIMERS[i].cur >= TIMERS[i].max {
                     TIMERS[i] = Timer::_new(time, function);
                     return TimerPtr {
-                        valid: true,
                         index: i
                     }
                 }
@@ -116,11 +114,23 @@ impl Timer {
 }
 
 impl TimerPtr {
+
     pub fn init(&self) {
-        if self.valid {
-            unsafe {
-                TIMERS[self.index].active = true;
-            }
+        unsafe {
+            TIMERS[self.index].active = true;
+        }
+    }
+
+    pub fn stop(&self) {
+        unsafe {
+            TIMERS[self.index].active = false;
+        }
+    }
+
+    pub fn execute(&self) {
+        unsafe {
+            TIMERS[self.index].active = false;
+            (TIMERS[self.index].func)()
         }
     }
 }
@@ -143,6 +153,6 @@ pub fn sleep(millis: u64) {
     }
 }
 
-fn do_nothing() {
+pub fn do_nothing() {
     return;
 }

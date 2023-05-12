@@ -1,4 +1,5 @@
 use crate::tooling::serial::*;
+use crate::time;
 
 
 // musical notes using the 12TET system (C, Db, D, ..., Bb, B)
@@ -62,6 +63,7 @@ impl AudioPlayer {
         {}
     }
 }
+
 // part of (basically all of the useful code) takes "inspiration" from the os dev article on the pc speaker
 // this will play the sound forever
 pub fn play(frequency: u32) {
@@ -89,8 +91,7 @@ pub fn stop() {
 // beep() and sweep() should not be used since they just waste cpu time
 pub fn beep(freq: u32, duration: u64) {
     play(freq);
-    crate::time::Timer::new(duration, &stop);
-    // stop();
+    let timer = crate::time::Timer::new(duration, &stop);
 }
 
 pub fn sweep(start: i32, end: i32, delay: u64) {
@@ -99,7 +100,7 @@ pub fn sweep(start: i32, end: i32, delay: u64) {
     while i < (end as f64) {
         play(i as u32);
         i *= step;
-        crate::waste_time(delay);
+        time::sleep(delay);
     }
     stop();
 }
